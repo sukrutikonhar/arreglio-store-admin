@@ -1,0 +1,112 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "primereact/button";
+import WebsiteForm from "./WebsiteForm";
+
+export default function WebsiteSettings() {
+    const navigate = useNavigate();
+
+    const [addedOptional, setAddedOptional] = useState({
+        ourTeam: false,
+        howItWorks: false,
+        statistics: false,
+        testimonials: false,
+        blogSection: false,
+    });
+
+    const [isFormVisible, setIsFormVisible] = useState(false);
+
+    // Toggle optional sections
+    const handleToggle = (section: keyof typeof addedOptional) => {
+        setAddedOptional((prev) => ({
+            ...prev,
+            [section]: !prev[section],
+        }));
+    };
+
+    // Show the form
+    const handleNext = () => {
+        setIsFormVisible(true);
+    };
+
+    // Cancel form and return to section view
+    const handleCancel = () => {
+        setIsFormVisible(false);
+    };
+
+    // Save and navigate to General Settings
+    const handleSave = () => {
+        navigate("/settings/general");
+    };
+
+    // Contact Info and Footer Section are now mandatory
+    const mandatorySections = [
+        "Header",
+        "Hero",
+        "What We Do",
+        "Contact Info",
+        "Footer Section"
+    ];
+    const selectedOptionalSections = Object.keys(addedOptional).filter(
+        (key) => addedOptional[key as keyof typeof addedOptional]
+    );
+
+    if (isFormVisible) {
+        return <WebsiteForm
+            mandatorySections={mandatorySections}
+            selectedOptionalSections={selectedOptionalSections}
+            onCancel={handleCancel}
+            onSave={handleSave}
+        />;
+    }
+
+    return (
+        <div>
+            <h4 className="tab-title mb-4">Customise your website</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12">
+                {/* Mandatory Sections */}
+                <div>
+                    <h5 className="website-title mb-4">Mandatory sections*</h5>
+                    <div className="website-tab-boxes">
+                        <div>
+                            <ul className="text-secondGray space-y-3">
+                                {mandatorySections.map((section) => (
+                                    <li key={section}>{section}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Optional Sections */}
+                <div>
+                    <h5 className="website-title mb-4">Optional sections</h5>
+                    <div className="website-tab-boxes">
+                        <div>
+                            <ul className="text-secondGray space-y-3">
+                                {Object.keys(addedOptional).map((key) => (
+                                    <li key={key} className="flex justify-between items-center">
+                                        <span>{key.replace(/([A-Z])/g, " $1")}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggle(key as keyof typeof addedOptional)}
+                                            className={addedOptional[key as keyof typeof addedOptional] ? "text-red-600" : "text-secondary"}
+                                        >
+                                            {addedOptional[key as keyof typeof addedOptional] ? "Remove" : "Add"}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="mt-12 flex !space-x-3">
+                <Button label="Cancel" className="btn btn-outline" onClick={handleCancel} outlined />
+                <Button label="Next" className="btn btn-primary" onClick={handleNext} />
+            </div>
+        </div>
+    );
+}

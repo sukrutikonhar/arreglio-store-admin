@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* src/App.css */
+.container {
+  @apply flex flex-col items-center justify-center min-h-screen bg-gray-100 p-8;
+}
+
+.heading {
+  @apply text-4xl font-bold text-blue-600 mb-4;
+}
+
+.text {
+  @apply text-lg text-green-700;
+}
+
+.button {
+  @apply mt-6 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition;
+}

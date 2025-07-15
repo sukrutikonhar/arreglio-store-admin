@@ -1,0 +1,219 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
+/* src/index.css */
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2c3e50;
+  --color-secondary: #2ecc71;
+  --color-titleGray: #414141;
+  --color-secondGray: #95a5a6;
+  --color-lightBlue: #cce5f6;
+  --color-custom: #00366d26;
+  --color-offWhite: #f5f5f5;
+  --color-labelGray: #494949;
+  --color-mediumGray: #707070;
+
+  --font-sans: "Outfit", sans-serif;
+  --font-weight-thin: 100;
+  --font-weight-extralight: 200;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+  /* Define your custom box shadow */
+  --shadow-custom: 0px 3px 6px #00000029;
+  --custom-border-color': #00366D26;
+}
+
+/* Import Tailwind's layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+  }
+
+  h4.page-title {
+    @apply text-2xl font-semibold text-titleGray mb-2;
+  }
+
+  h4.tab-title {
+    @apply text-2xl font-medium text-secondGray;
+  }
+
+  h5.website-title {
+    @apply font-medium text-xl text-secondGray;
+  }
+
+  p {
+    @apply text-mediumGray;
+  }
+}
+
+@layer components {
+  .header-top {
+    @apply flex items-center justify-between text-white px-4 py-4 bg-primary;
+  }
+
+  .header-icon {
+    @apply w-10 h-10 flex items-center justify-center hover:bg-gray-900 rounded-full;
+  }
+
+  .header-icon.active {
+    @apply bg-gray-900 text-white;
+  }
+
+  .breadcrumbs {
+    @apply text-mediumGray;
+  }
+
+  button,
+  a {
+    @apply cursor-pointer;
+  }
+
+  .tab-button {
+    @apply px-6 py-2 rounded-[6px] shadow-custom transition-all duration-300 ease-in-out;
+  }
+
+  .tab-button.active {
+    @apply bg-secondary text-white;
+  }
+
+  .tab-button.inactive {
+    @apply bg-white text-secondGray  hover:bg-gray-100;
+  }
+
+  .website-tab-boxes {
+    @apply border border-custom rounded-md p-4;
+  }
+
+  .website-tab-boxes div {
+    @apply h-40 overflow-y-auto;
+  }
+
+  .btn {
+    @apply w-36 px-4 py-2 text-center transition-opacity opacity-100 rounded-[5px];
+  }
+
+  .btn-outline {
+    @apply bg-white border border-primary hover:bg-gray-100;
+  }
+
+  .btn-primary {
+    @apply bg-secondary text-white hover:bg-green-600;
+  }
+
+  label {
+    @apply text-[16px] text-labelGray mb-2 block;
+  }
+
+   .doc {
+    @apply flex;
+  }
+  .doc-main {
+    @apply flex-grow flex-shrink min-w-0;
+  }
+  .doc-intro {
+    @apply mb-6;
+  }
+  .doc-section-label, .doc-table tbody td .doc-option-name, .doc-table tbody td>i {
+    scroll-margin-top: 8.5rem;
+  }
+  h1:first-child, h2:first-child, h3:first-child, h4:first-child, h5:first-child, h6:first-child {
+    @apply mt-0;
+  }
+  .doc-section-nav, .layout-sidebar {
+    @apply top-32;
+  }
+  .doc-tabpanel {
+    @apply flex flex-row;
+  }
+  .doc-section-nav {
+    @apply order-first sticky top-24 left-0 w-80 max-h-[calc(100vh-15rem)] list-none p-1 m-0 mr-16 overflow-y-auto overflow-x-hidden self-start;
+  }
+  .doc-section-nav .navbar-item.active-navbar-item {
+    @apply bg-gray-200 border-l-4 border-secondary text-secondary;
+  }
+  .doc-section-nav .navbar-item {
+    @apply py-2 px-4 text-gray-500 border-l-4 border-transparent;
+  }
+  .doc-section-nav .navbar-item:hover {
+    @apply text-black;
+  }
+
+  .main-content-wrapper {
+    max-width: 1504px;
+    min-width: 360px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    /* padding-left: 1rem; */
+    /* padding-right: 1rem; */
+    box-sizing: border-box;
+  }
+  @media screen and (min-width: 1960px) {
+    .main-content-wrapper {
+      width: 1504px;
+    }
+  }
+  
+}
+
+/* Create a custom utility for the custom box shadow */
+@layer utilities {
+  .shadow-custom {
+    box-shadow: var(--shadow-custom);
+  }
+
+  /* Outfit Font Weights */
+  .outfit-thin {
+    font-family: "Outfit", sans-serif;
+    font-weight: 100;
+  }
+
+  .outfit-extralight {
+    font-family: "Outfit", sans-serif;
+    font-weight: 200;
+  }
+
+  .outfit-light {
+    font-family: "Outfit", sans-serif;
+    font-weight: 300;
+  }
+
+  .outfit-regular {
+    font-family: "Outfit", sans-serif;
+    font-weight: 400;
+  }
+
+  .outfit-medium {
+    font-family: "Outfit", sans-serif;
+    font-weight: 500;
+  }
+
+  .outfit-semibold {
+    font-family: "Outfit", sans-serif;
+    font-weight: 600;
+  }
+
+  .outfit-bold {
+    font-family: "Outfit", sans-serif;
+    font-weight: 700;
+  }
+
+  .outfit-extrabold {
+    font-family: "Outfit", sans-serif;
+    font-weight: 800;
+  }
+
+  .outfit-black {
+    font-family: "Outfit", sans-serif;
+    font-weight: 900;
+  }
+}
