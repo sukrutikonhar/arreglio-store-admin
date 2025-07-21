@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { Sidebar } from 'primereact/sidebar';
 import { Link, useNavigate } from 'react-router-dom';
@@ -50,7 +49,7 @@ const priorityIcon = (priority: string) => {
     }
 };
 
-export default function Overview() {
+export default function OverviewFit() {
     const [collapsed, setCollapsed] = useState(statuses.map(() => false));
     const [optionsPanel, setOptionsPanel] = useState<{ open: boolean, orderId: number | null }>({ open: false, orderId: null });
     const navigate = useNavigate();
