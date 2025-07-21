@@ -24,8 +24,8 @@ export const ContactInfoSection = ({
         options?: string[];
     }>;
 }) => (
-    <section className="bg-[#f6f7f8] px-4 py-10 md:py-16">
-        <div className="flex flex-col md:flex-row justify-center gap-8 md:gap-16 max-w-5xl mx-auto">
+    <section className="bg-[#f5f5f5] px-4 md:px-12 py-10 md:py-16">
+        <div className="flex flex-col md:flex-row justify-center gap-8 md:gap-16 max-w-7xl mx-auto">
             {/* Left: Info */}
             <div className="flex-1 min-w-[220px] mb-8 md:mb-0">
                 <h2 className="font-bold text-3xl md:text-4xl mb-4 text-[#223046] tracking-tight">{title || 'HOW TO FIND US'}</h2>
@@ -34,7 +34,7 @@ export const ContactInfoSection = ({
                 <div className="flex flex-col gap-6">
                     {methods && methods.length > 0 ? methods.map((method, idx) => (
                         <div key={idx} className="flex items-center gap-4">
-                            <div className="bg-[#2ECC71] rounded-lg w-14 h-14 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-[#2ECC71] w-14 h-14 flex items-center justify-center flex-shrink-0">
                                 <span className="text-white text-2xl">
                                     {method.icon === 'phone' ? <HiOutlinePhone size={28} /> :
                                         method.icon === 'mail' ? <HiOutlineEnvelope size={28} /> :
@@ -44,12 +44,12 @@ export const ContactInfoSection = ({
                                 </span>
                             </div>
                             <div className="flex-1">
-                                <div className="font-bold text-lg text-[#223046] mb-1">{method.label || `Contact Method ${idx + 1}`}</div>
+                                <div className="font-bold text-lg text-[#707070] mb-1">{method.label || `Contact Method ${idx + 1}`}</div>
                                 <div className="text-gray-500 text-sm">
                                     {method.icon === 'phone' && method.value ? (
-                                        <a href={`tel:${method.value}`} className="underline text-gray-500">{method.value}</a>
+                                        <a href={`tel:${method.value}`} className="text-gray-500">{method.value}</a>
                                     ) : method.icon === 'mail' && method.value ? (
-                                        <a href={`mailto:${method.value}`} className="underline text-gray-500">{method.value}</a>
+                                        <a href={`mailto:${method.value}`} className="text-gray-500">{method.value}</a>
                                     ) : (
                                         method.value || 'Contact information'
                                     )}
@@ -64,8 +64,8 @@ export const ContactInfoSection = ({
             {/* Right: Form */}
             <div className="flex-1 min-w-[260px]">
                 {/* Contact Form */}
-                <form className="bg-white p-6 md:p-8 rounded-xl shadow-md border border-gray-100 mb-4">
-                    <h4 className="text-xl font-semibold text-[#223046] mb-6 text-center">Send us a message</h4>
+                <form className="bg-[#95A5A6] p-6 md:p-8 rounded-xl shadow-md border border-gray-100 mb-4">
+                    {/* <h4 className="text-xl font-semibold text-[#223046] mb-6 text-center">Send us a message</h4> */}
                     <div className="flex flex-wrap gap-4">
                         {contactFormFields && contactFormFields.length > 0 ? contactFormFields.map((field, idx) => {
                             const width = field.width === 'half' ? 'md:w-[48%] w-full' : field.width === 'third' ? 'md:w-[32%] w-full' : 'w-full';

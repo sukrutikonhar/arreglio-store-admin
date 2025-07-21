@@ -1,5 +1,5 @@
 export const WhatWeDoSection = ({ whatWeDo, aboutUsImage }: { whatWeDo: string; aboutUsImage: File | string | null }) => (
-    <section className="flex flex-col md:flex-row items-center px-4 py-10 md:py-16 gap-8 md:gap-12">
+    <section className="px-4 md:px-12 max-w-7xl mx-auto flex flex-col md:flex-row items-center py-10 md:py-16 gap-8 md:gap-12">
         {/* Left: Image */}
         <div className="flex-1 flex justify-center mb-6 md:mb-0">
             {aboutUsImage && (

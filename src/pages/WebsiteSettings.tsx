@@ -52,6 +52,7 @@ export default function WebsiteSettings() {
     );
 
     if (isFormVisible) {
+        // Pass only the mandatory sections and selected optional sections to WebsiteForm
         return <WebsiteForm
             mandatorySections={mandatorySections}
             selectedOptionalSections={selectedOptionalSections}
@@ -84,18 +85,25 @@ export default function WebsiteSettings() {
                     <div className="website-tab-boxes">
                         <div>
                             <ul className="text-secondGray space-y-3">
-                                {Object.keys(addedOptional).map((key) => (
-                                    <li key={key} className="flex justify-between items-center">
-                                        <span>{key.replace(/([A-Z])/g, " $1")}</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleToggle(key as keyof typeof addedOptional)}
-                                            className={addedOptional[key as keyof typeof addedOptional] ? "text-red-600" : "text-secondary"}
-                                        >
-                                            {addedOptional[key as keyof typeof addedOptional] ? "Remove" : "Add"}
-                                        </button>
-                                    </li>
-                                ))}
+                                {Object.keys(addedOptional).map((key) => {
+                                    // Convert camelCase to Title Case for display
+                                    const displayName = key
+                                        .replace(/([A-Z])/g, ' $1')
+                                        .replace(/^./, str => str.toUpperCase())
+                                        .replace(/\b\w/g, c => c.toUpperCase());
+                                    return (
+                                        <li key={key} className="flex justify-between items-center">
+                                            <span>{displayName}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleToggle(key as keyof typeof addedOptional)}
+                                                className={addedOptional[key as keyof typeof addedOptional] ? "text-red-600" : "text-secondary"}
+                                            >
+                                                {addedOptional[key as keyof typeof addedOptional] ? "Remove" : "Add"}
+                                            </button>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     </div>

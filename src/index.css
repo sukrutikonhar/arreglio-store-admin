@@ -25,7 +25,7 @@
   --font-weight-black: 900;
   /* Define your custom box shadow */
   --shadow-custom: 0px 3px 6px #00000029;
-  --custom-border-color': #00366D26;
+  --custom-border-color: #00366d26;
 }
 
 /* Import Tailwind's layers */
@@ -110,10 +110,10 @@
   }
 
   label {
-    @apply text-[16px] text-labelGray mb-2 block;
+    @apply text-[14px] text-labelGray mb-2 block;
   }
 
-   .doc {
+  .doc {
     @apply flex;
   }
   .doc-main {
@@ -122,20 +122,28 @@
   .doc-intro {
     @apply mb-6;
   }
-  .doc-section-label, .doc-table tbody td .doc-option-name, .doc-table tbody td>i {
+  .doc-section-label,
+  .doc-table tbody td .doc-option-name,
+  .doc-table tbody td > i {
     scroll-margin-top: 8.5rem;
   }
-  h1:first-child, h2:first-child, h3:first-child, h4:first-child, h5:first-child, h6:first-child {
+  h1:first-child,
+  h2:first-child,
+  h3:first-child,
+  h4:first-child,
+  h5:first-child,
+  h6:first-child {
     @apply mt-0;
   }
-  .doc-section-nav, .layout-sidebar {
+  .doc-section-nav,
+  .layout-sidebar {
     @apply top-32;
   }
   .doc-tabpanel {
     @apply flex flex-row;
   }
   .doc-section-nav {
-    @apply order-first sticky top-24 left-0 w-80 max-h-[calc(100vh-15rem)] list-none p-1 m-0 mr-16 overflow-y-auto overflow-x-hidden self-start;
+    @apply order-first sticky top-24 left-0 w-80 max-h-[calc(100vh-10rem)] list-none p-1 m-0 mr-16 overflow-y-auto overflow-x-hidden self-start;
   }
   .doc-section-nav .navbar-item.active-navbar-item {
     @apply bg-gray-200 border-l-4 border-secondary text-secondary;
@@ -149,7 +157,7 @@
 
   .main-content-wrapper {
     max-width: 1504px;
-    min-width: 360px;
+    /* min-width: 360px; */
     width: 100%;
     margin-left: auto;
     margin-right: auto;
@@ -157,12 +165,25 @@
     /* padding-right: 1rem; */
     box-sizing: border-box;
   }
+
+  .settings-tab .p-tabview .p-tabview-panels {
+    padding: 1.25rem 0 !important;
+  }
+
+  .p-fileupload .p-button,
+  .p-button-link {
+    font-size: 14px !important;
+  }
+
+  .p-button-link {
+    padding-left: 0 !important;
+  }
+
   @media screen and (min-width: 1960px) {
     .main-content-wrapper {
       width: 1504px;
     }
   }
-  
 }
 
 /* Create a custom utility for the custom box shadow */

@@ -30,8 +30,8 @@ export const FooterSection = ({
     copyright: string;
     policies: { label: string; url: string }[];
 }) => (
-    <footer className="bg-[#223046] text-white px-4 pt-12 pb-4">
-        <div className="flex flex-col md:flex-row justify-center gap-8 md:gap-16 max-w-6xl mx-auto flex-wrap">
+    <footer className="bg-[#223046] text-white px-4 md:px-12 pt-12 pb-4">
+        <div className="flex flex-col md:flex-row justify-center gap-8 md:gap-16 max-w-7xl mx-auto flex-wrap">
             {/* About */}
             <div className="flex-1 min-w-[180px] mb-8 md:mb-0">
                 <h4 className="font-bold text-xl mb-2">{storeName || "Store name"}</h4>
@@ -86,7 +86,7 @@ export const FooterSection = ({
             </div>
         </div>
         <div className="border-t border-[#cfd8dc33] my-8" />
-        <div className="flex flex-col md:flex-row justify-between items-center max-w-6xl mx-auto gap-2 md:gap-0">
+        <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-2 md:gap-0">
             <div className="text-[#cfd8dc] text-xs">{copyright || '© 2024 All rights reserved.'}</div>
             <div className="text-[#cfd8dc] text-xs flex flex-wrap gap-2 md:gap-4">
                 {policies && policies.length > 0 ? policies.map((policy, idx) => (

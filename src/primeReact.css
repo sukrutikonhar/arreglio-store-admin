@@ -296,7 +296,7 @@
   .p-component {
     font-family: var(--font-family);
     font-feature-settings: var(--font-feature-settings, normal);
-    font-size: 1rem;
+    font-size: 14px;
     font-weight: normal;
   }
   .p-component-overlay {
@@ -1327,14 +1327,14 @@
   .p-inputtext {
     font-family: var(--font-family);
     font-feature-settings: var(--font-feature-settings, normal);
-    font-size: 1rem;
+    font-size: 14px;
     color: #4b5563;
     background: #f5f5f5;
     padding: 0.5rem 0.75rem;
     border: 1px solid #00366d26;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
     appearance: none;
-    border-radius: 6px;
+    border-radius: 4px;
     outline-color: transparent;
   }
   .p-inputtext:enabled:hover {
@@ -2274,7 +2274,7 @@
     padding: 0.5rem 1.25rem;
     font-size: 1rem;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
-    border-radius: 6px;
+    border-radius: 4px;
   }
   .p-button:not(:disabled):hover {
     background: #1e9d58;
@@ -2977,7 +2977,7 @@
   }
   .p-button.p-button-link:not(:disabled):focus {
     background: transparent;
-    box-shadow: 0 0 0 0.2rem #a5f3fc;
+    /* box-shadow: 0 0 0 0.2rem #a5f3fc; */
     border-color: transparent;
   }
   .p-button.p-button-link:not(:disabled):active {

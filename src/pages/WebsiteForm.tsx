@@ -139,8 +139,31 @@ async function convertFormDataImages(formData: any) {
 
 const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOptionalSections, onCancel, onSave }) => {
     // const navigate = useNavigate();
-    const sectionRefs = sections.map(() => useRef<HTMLElement>(null));
-    const [activeSection, setActiveSection] = useState(sections[0].id);
+    // Map from optional section keys to section ids in the sections array
+    const optionalSectionKeyToId: Record<string, string> = {
+        ourTeam: 'our-team',
+        howItWorks: 'how-it-works',
+        statistics: 'statistics',
+        testimonials: 'testimonials',
+        blogSection: 'blog-section',
+        contactInfo: 'contact-info',
+        footerSection: 'footer-section',
+    };
+    // Compute the list of section ids to show
+    const sectionIdsToShow = [
+        ...mandatorySections.map(name => {
+            // Find the section id by matching label (case-insensitive, ignoring ' Section')
+            const found = sections.find(s => s.label.replace(/ Section$/i, '').toLowerCase() === name.replace(/ Section$/i, '').toLowerCase());
+            return found ? found.id : null;
+        }).filter(Boolean),
+        ...selectedOptionalSections.map(key => optionalSectionKeyToId[key]).filter(Boolean)
+    ];
+
+    // Filter the sections to only those to show
+    const filteredSections = sections.filter(s => sectionIdsToShow.includes(s.id));
+
+    const sectionRefs = React.useRef<(HTMLElement | null)[]>([]);
+    const [activeSection, setActiveSection] = useState(filteredSections[0]?.id || '');
     const toast = useRef<Toast>(null);
     const [publishedId, setPublishedId] = useState<string | null>(null);
 
@@ -238,11 +261,13 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
     const handleScroll = () => {
         const scrollPos = window.scrollY;
-        sectionRefs.forEach((ref, index) => {
-            if (ref.current) {
-                const offsetTop = ref.current.offsetTop - 100;
-                if (scrollPos >= offsetTop) {
-                    setActiveSection(sections[index].id);
+        filteredSections.forEach((section, index) => {
+            const ref = sectionRefs.current[index];
+            if (ref) {
+                const offsetTop = ref.offsetTop - 120; // adjust offset for sticky header
+                const offsetBottom = offsetTop + ref.offsetHeight;
+                if (scrollPos >= offsetTop && scrollPos < offsetBottom) {
+                    setActiveSection(section.id);
                 }
             }
         });
@@ -251,10 +276,10 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
     useEffect(() => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, [sectionRefs]);
+    }, [filteredSections]);
 
     const scrollToSection = (index: number) => {
-        const element = sectionRefs[index].current;
+        const element = sectionRefs.current[index];
         if (element) {
             const headerOffset = 100;
             const elementPosition = element.getBoundingClientRect().top;
@@ -665,12 +690,17 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
         })();
     }, [formData, contactFormFields, selectedSections]);
 
+
+    useEffect(() => {
+        sectionRefs.current = filteredSections.map((_, i) => sectionRefs.current[i] || null);
+    }, [filteredSections]);
+
     return (
         <div className="doc-tabpanel">
             <Toast ref={toast} />
 
-            <ul className="doc-section-nav">
-                {sections.map((section, index) => (
+            <ul className="doc-section-nav hidden md:block">
+                {filteredSections.map((section, index) => (
                     <li
                         key={section.id}
                         className={`navbar-item ${activeSection === section.id ? 'active-navbar-item' : ''}`}
@@ -685,8 +715,8 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
             </ul>
 
             <div className="doc-main">
-                {sections.map((section, index) => (
-                    <section key={section.id} id={section.id} ref={sectionRefs[index]} className="pb-10">
+                {filteredSections.map((section, index) => (
+                    <section key={section.id} id={section.id} ref={el => { sectionRefs.current[index] = el; }} className="pb-10">
                         <h5 className="doc-section-label website-title mb-4">{section.label}</h5>
                         <div className="doc-section-description">
                             {section.id === 'header-section' && (
@@ -764,53 +794,61 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
                                     {/* Navigation Menu */}
                                     <div>
-                                        <label className="block mb-2">Navigation Menu*</label>
-                                        <div className="space-y-4">
+                                        <label className="block mb-[6px]">Navigation Menu*</label>
+                                        <div className="space-y-3">
                                             {formData.navigationLinks.map((item, idx) => (
-                                                <div key={item.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                                                    {/* Menu Item */}
-                                                    <div className="flex gap-4 items-center mb-3">
+                                                <div key={item.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+
+                                                    {/* Menu Item - Responsive */}
+                                                    <div className="flex flex-col md:flex-row gap-3 md:items-center mb-2">
+
                                                         <InputText
-                                                            className="flex-1"
+                                                            className="w-full md:flex-1"
                                                             placeholder="Menu Item Name"
                                                             value={item.name}
                                                             onChange={e => handleNavigationItemChange(idx, 'name', e.target.value)}
                                                         />
+
                                                         <InputText
-                                                            className="flex-1"
+                                                            className="w-full md:flex-1"
                                                             placeholder="Menu Item Link (e.g. /about)"
                                                             value={item.link}
                                                             onChange={e => handleNavigationItemChange(idx, 'link', e.target.value)}
                                                         />
-                                                        <div className="flex items-center gap-2">
-                                                            <Checkbox
-                                                                inputId={`hasSubmenu-${idx}`}
-                                                                checked={item.hasSubmenu}
-                                                                onChange={e => handleNavigationItemChange(idx, 'hasSubmenu', e.checked)}
-                                                            />
-                                                            <label htmlFor={`hasSubmenu-${idx}`} className="text-sm">Has Submenu</label>
+
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <Checkbox
+                                                                    inputId={`hasSubmenu-${idx}`}
+                                                                    checked={item.hasSubmenu}
+                                                                    onChange={e => handleNavigationItemChange(idx, 'hasSubmenu', e.checked)}
+                                                                />
+                                                                <label htmlFor={`hasSubmenu-${idx}`} className="text-sm mb-0">Has Submenu</label>
+                                                            </div>
+
+                                                            {formData.navigationLinks.length > 1 && (
+                                                                <Button
+                                                                    className="p-button-text p-button-danger hover:bg-red-100 rounded-full shrink-0"
+                                                                    onClick={() => handleRemoveNavigationItem(idx)}
+                                                                    type="button"
+                                                                    title="Remove Menu Item"
+                                                                    style={{
+                                                                        padding: '0.5rem',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                    }}
+                                                                >
+                                                                    <TrashIcon className="w-5 h-5 text-red-600" />
+                                                                </Button>
+                                                            )}
                                                         </div>
-                                                        {formData.navigationLinks.length > 1 && (
-                                                            <Button
-                                                                className="p-button-text p-button-danger hover:bg-red-100 rounded-full"
-                                                                onClick={() => handleRemoveNavigationItem(idx)}
-                                                                type="button"
-                                                                title="Remove Menu Item"
-                                                                style={{
-                                                                    padding: '0.5rem',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                }}
-                                                            >
-                                                                <TrashIcon className="w-5 h-5 text-red-600" />
-                                                            </Button>
-                                                        )}
+
                                                     </div>
 
                                                     {/* Submenu Items */}
                                                     {item.hasSubmenu && (
-                                                        <div className="ml-6 space-y-2">
+                                                        <div className="mt-2 ml-4 space-y-2">
                                                             <div className="flex items-center gap-2 mb-2">
                                                                 <span className="text-sm font-medium">Submenu Items:</span>
                                                                 <Button
@@ -820,39 +858,42 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                                 />
                                                             </div>
                                                             {item.submenu.map((subItem, subIdx) => (
-                                                                <div key={subItem.id} className="flex gap-4 items-center bg-white p-2 rounded">
+                                                                <div key={subItem.id} className="flex flex-col md:flex-row gap-3 bg-white p-2 rounded">
                                                                     <InputText
-                                                                        className="flex-1"
+                                                                        className="w-full md:flex-1"
                                                                         placeholder="Submenu Item Name"
                                                                         value={subItem.name}
                                                                         onChange={e => handleSubmenuItemChange(idx, subIdx, 'name', e.target.value)}
                                                                     />
                                                                     <InputText
-                                                                        className="flex-1"
+                                                                        className="w-full md:flex-1"
                                                                         placeholder="Submenu Item Link"
                                                                         value={subItem.link}
                                                                         onChange={e => handleSubmenuItemChange(idx, subIdx, 'link', e.target.value)}
                                                                     />
-                                                                    <Button
-                                                                        className="p-button-text p-button-danger hover:bg-red-100 rounded-full"
-                                                                        onClick={() => handleRemoveSubmenuItem(idx, subIdx)}
-                                                                        type="button"
-                                                                        title="Remove Submenu Item"
-                                                                        style={{
-                                                                            padding: '0.5rem',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                        }}
-                                                                    >
-                                                                        <TrashIcon className="w-5 h-5 text-red-600" />
-                                                                    </Button>
+                                                                    <div className='flex justify-end'>
+                                                                        <Button
+                                                                            className="p-button-text p-button-danger hover:bg-red-100 rounded-full shrink-0"
+                                                                            onClick={() => handleRemoveSubmenuItem(idx, subIdx)}
+                                                                            type="button"
+                                                                            title="Remove Submenu Item"
+                                                                            style={{
+                                                                                padding: '0.5rem',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                            }}
+                                                                        >
+                                                                            <TrashIcon className="w-5 h-5 text-red-600" />
+                                                                        </Button>
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>
                                                     )}
                                                 </div>
                                             ))}
+
                                             <Button
                                                 label="+Add Menu Item"
                                                 className="p-button-link text-secondary"
@@ -860,15 +901,14 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                             />
                                         </div>
                                     </div>
-
                                 </div>
                             )}
 
                             {section.id === 'hero-section' && (
                                 <div className='space-y-6'>
-                                    <div className="grid grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div>
-                                            <label>Title*</label>
+                                            <label className="block mb-1 text-sm font-medium text-gray-700">Title*</label>
                                             <InputText
                                                 name="heroTitle"
                                                 className="w-full"
@@ -877,8 +917,9 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                 onChange={handleInputChange}
                                             />
                                         </div>
+
                                         <div>
-                                            <label>Background Image*</label>
+                                            <label className="block mb-1 text-sm font-medium text-gray-700">Background Image*</label>
                                             <div className="space-y-2">
                                                 <FileUpload
                                                     mode="basic"
@@ -888,25 +929,29 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                     chooseLabel="Upload Background Image"
                                                     onUpload={onUpload}
                                                     auto
-                                                    className="p-button-sm"
+                                                    className="p-button-sm w-full"
                                                     onSelect={(e) => {
                                                         const file = e.files[0];
                                                         setFormData(prev => ({ ...prev, backgroundImage: file }));
                                                     }}
                                                 />
-                                                <span className="text-secondGray">
+                                                <span className="text-secondGray text-sm">
                                                     {formData.backgroundImage?.name || 'No file chosen'}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
+
                                     <div>
-                                        <label className="block mb-2">Services*</label>
+                                        <label className="block mb-[6px]">Services*</label>
                                         {formData.services.map((service, idx) => (
-                                            <div key={idx} className="flex items-center gap-4 mb-2 w-full">
+                                            <div
+                                                key={idx}
+                                                className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-4 w-full bg-white p-4 rounded shadow-sm"
+                                            >
                                                 {/* Name input */}
                                                 <InputText
-                                                    className="flex-1"
+                                                    className="w-full md:flex-1"
                                                     placeholder="Name of service"
                                                     value={service.name}
                                                     onChange={e => handleServiceChange(idx, 'name', e.target.value)}
@@ -914,33 +959,40 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
                                                 {/* Link input */}
                                                 <InputText
-                                                    className="flex-1"
+                                                    className="w-full md:flex-1"
                                                     placeholder="Link to CTA"
                                                     value={service.link}
                                                     onChange={e => handleServiceChange(idx, 'link', e.target.value)}
                                                 />
 
-                                                {/* Upload button with fixed width */}
-                                                <div className="w-[200px]">
-                                                    <FileUpload
-                                                        mode="basic"
-                                                        name={`icon-${idx}`}
-                                                        accept="image/*"
-                                                        maxFileSize={1000000}
-                                                        chooseLabel={service.icon ? truncateFileName(service.icon.name) : 'Upload Icon'}
-                                                        onUpload={onUpload}
-                                                        auto
-                                                        className="p-button-sm w-full"
-                                                        onSelect={(e) => {
-                                                            const file = e.files[0];
-                                                            handleServiceChange(idx, 'icon', file);
-                                                        }}
-                                                    />
-                                                </div>
+                                                {/* Upload + Delete Button Wrapper */}
+                                                <div className="flex w-full md:w-auto items-center gap-2">
+                                                    {/* Upload button */}
+                                                    <div className="flex-1 md:w-[200px]">
+                                                        <FileUpload
+                                                            mode="basic"
+                                                            name={`icon-${idx}`}
+                                                            accept="image/*"
+                                                            maxFileSize={1000000}
+                                                            chooseLabel={
+                                                                service.icon
+                                                                    ? (typeof service.icon === 'string'
+                                                                        ? truncateFileName(service.icon)
+                                                                        : truncateFileName(service.icon.name))
+                                                                    : 'Upload Icon'
+                                                            }
+                                                            onUpload={onUpload}
+                                                            auto
+                                                            className="p-button-sm w-full"
+                                                            onSelect={(e) => {
+                                                                const file = e.files[0];
+                                                                handleServiceChange(idx, 'icon', file);
+                                                            }}
+                                                        />
+                                                    </div>
 
-                                                {/* Delete icon at the end */}
-                                                {formData.services.length > 1 && (
-                                                    <div className="ml-2">
+                                                    {/* Delete button */}
+                                                    {formData.services.length > 1 && (
                                                         <Button
                                                             className="p-button-text p-button-danger hover:bg-red-100 rounded-full"
                                                             onClick={() => handleRemoveService(idx)}
@@ -956,8 +1008,8 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                         >
                                                             <TrashIcon className="w-5 h-5 text-red-600" />
                                                         </Button>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
 
@@ -968,6 +1020,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                         />
                                     </div>
 
+
                                 </div>
                             )}
 
@@ -975,7 +1028,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {/* Right: Description */}
                                     <div>
-                                        <label className="block mb-2">Description*</label>
+                                        <label className="block mb-[6px]">Description*</label>
                                         <InputTextarea
                                             name="whatWeDo"
                                             className="w-full min-h-[120px]"
@@ -986,7 +1039,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     </div>
                                     {/* Left: Image upload */}
                                     <div>
-                                        <label className="block mb-2">Section Image*</label>
+                                        <label className="block mb-[6px]">Section Image*</label>
                                         <FileUpload
                                             mode="basic"
                                             name="aboutUsImage"
@@ -1001,7 +1054,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                 setFormData(prev => ({ ...prev, aboutUsImage: file }));
                                             }}
                                         />
-                                        <span className="text-secondGray">
+                                        <span className="text-secondGray text-sm">
                                             {formData.aboutUsImage?.name ? truncateFileName(formData.aboutUsImage.name) : 'No file chosen'}
                                         </span>
                                     </div>
@@ -1013,7 +1066,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     {/* Row 1: Description (left), CTA+Link (right) */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                                         <div>
-                                            <label className="block mb-2">Description*</label>
+                                            <label className="block mb-[6px]">Description*</label>
                                             <InputTextarea
                                                 name="ourTeamDescription"
                                                 className="w-full min-h-[100px]"
@@ -1023,7 +1076,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                             />
                                         </div>
                                         <div>
-                                            <label className="block mb-2">Link to CTA*</label>
+                                            <label className="block mb-[6px]">Link to CTA*</label>
                                             <div className="flex gap-2 items-end">
                                                 <InputText
                                                     name="ourTeamCTA"
@@ -1044,29 +1097,88 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     </div>
                                     {/* Row 2+: Team Members */}
                                     <div>
-                                        <label className="block mb-2">Team Members*</label>
+                                        <label className="block mb-[6px]">Team Members*</label>
                                         {formData.teamMembers && formData.teamMembers.map((member, idx) => (
-                                            <div key={idx} className="relative grid grid-cols-1 md:grid-cols-2 gap-8 mb-4 bg-white p-4 rounded shadow-sm team-box">
-                                                {/* Left: Photo, Name, Designation in one row */}
+                                            <div
+                                                key={idx}
+                                                className="relative grid grid-cols-1 md:grid-cols-2 gap-8 mb-4 bg-white p-4 rounded shadow-sm team-box"
+                                            >
+                                                {/* Left Column */}
                                                 <div className="flex flex-col gap-4">
-                                                    {/* Row 1: Name & Designation */}
-                                                    <div className="flex flex-col md:flex-row gap-4">
-                                                        <InputText
-                                                            className="w-full md:w-1/2"
-                                                            placeholder="Team Member Name"
-                                                            value={member.name}
-                                                            onChange={e => handleTeamMemberChange(idx, 'name', e.target.value)}
-                                                        />
-                                                        <InputText
-                                                            className="w-full md:w-1/2"
-                                                            placeholder="Designation"
-                                                            value={member.designation}
-                                                            onChange={e => handleTeamMemberChange(idx, 'designation', e.target.value)}
+                                                    {/* Row 1: Name */}
+                                                    <InputText
+                                                        className="w-full"
+                                                        placeholder="Team Member Name"
+                                                        value={member.name}
+                                                        onChange={e => handleTeamMemberChange(idx, 'name', e.target.value)}
+                                                    />
+
+                                                    {/* Row 2: Socials */}
+                                                    <div>
+                                                        <label className="block mb-[6px] font-medium text-sm">Socials</label>
+
+                                                        {member.socials.map((social, sIdx) => (
+                                                            <div
+                                                                key={sIdx}
+                                                                className="flex flex-wrap md:flex-nowrap gap-x-2 gap-y-2 mb-2 items-center w-full"
+                                                            >
+                                                                {/* Social Dropdown */}
+                                                                <Dropdown
+                                                                    className="w-full sm:w-[140px] md:w-40 min-w-[120px]"
+                                                                    placeholder="Select Social"
+                                                                    value={social.icon}
+                                                                    options={allSocialOptions.filter(
+                                                                        option => !member.socials.some((s, i) => s.icon === option.value && i !== sIdx)
+                                                                    )}
+                                                                    onChange={e => handleTeamMemberSocialChange(idx, sIdx, 'icon', e.value)}
+                                                                    optionLabel="label"
+                                                                    optionValue="value"
+                                                                />
+
+                                                                {/* URL Input */}
+                                                                <InputText
+                                                                    className="flex-1 min-w-0 w-full"
+                                                                    placeholder="Social URL"
+                                                                    value={social.url}
+                                                                    onChange={e => handleTeamMemberSocialChange(idx, sIdx, 'url', e.target.value)}
+                                                                />
+
+                                                                {/* Trash Button */}
+                                                                {member.socials.length > 1 && (
+                                                                    <Button
+                                                                        className="p-button-text p-button-danger"
+                                                                        onClick={() => handleRemoveTeamMemberSocial(idx, sIdx)}
+                                                                        type="button"
+                                                                        aria-label="Remove Social"
+                                                                    >
+                                                                        <TrashIcon className="w-5 h-5 text-red-600" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        ))}
+
+                                                        {/* +Add Social Button */}
+                                                        <Button
+                                                            label="+ Add Social"
+                                                            className="p-button-link text-secondary mt-2"
+                                                            onClick={() => handleAddTeamMemberSocial(idx)}
                                                         />
                                                     </div>
 
-                                                    {/* Row 2: Upload Button with Label */}
-                                                    <div className="flex flex-col gap-1">
+                                                </div>
+
+                                                {/* Right Column */}
+                                                <div className="flex flex-col">
+                                                    {/* Row 1: Designation */}
+                                                    <InputText
+                                                        className="w-full"
+                                                        placeholder="Designation"
+                                                        value={member.designation}
+                                                        onChange={e => handleTeamMemberChange(idx, 'designation', e.target.value)}
+                                                    />
+
+                                                    {/* Row 2: Upload Image */}
+                                                    <div className="flex flex-col mt-4">
                                                         <FileUpload
                                                             mode="basic"
                                                             name={`profile-upload-${idx}`}
@@ -1084,7 +1196,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                                 if (file) handleTeamMemberChange(idx, 'profilePicture', file);
                                                             }}
                                                             auto
-                                                            className="p-button-sm w-full md:w-64"
+                                                            className="p-button-sm w-full md:w-64 mb-2"
                                                         />
                                                         <span className="text-secondGray text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-[260px]">
                                                             {member.profilePicture?.name
@@ -1095,10 +1207,9 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                         </span>
                                                     </div>
 
-
-                                                    {/* Delete Button (positioned absolutely) */}
+                                                    {/* Delete Button at bottom right */}
                                                     {formData.teamMembers.length > 1 && (
-                                                        <div className="absolute top-2 right-2 z-10">
+                                                        <div className="flex justify-end items-end absolute right-2 bottom-2">
                                                             <Button
                                                                 className="p-button-text p-button-danger hover:bg-red-100 rounded-full"
                                                                 onClick={() => handleRemoveTeamMember(idx)}
@@ -1117,63 +1228,16 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                         </div>
                                                     )}
                                                 </div>
-
-                                                {/* Right: Socials */}
-                                                <div>
-                                                    <label className="block mb-2">Socials</label>
-                                                    {member.socials && member.socials.map((social, sIdx) => (
-                                                        <div key={sIdx} className="flex gap-2 mb-2 items-center">
-                                                            <Dropdown
-                                                                className="w-40"
-                                                                placeholder="Select Social Platform"
-                                                                value={social.icon}
-                                                                options={allSocialOptions.filter(
-                                                                    option =>
-                                                                        !member.socials.some((s, i) => s.icon === option.value && i !== sIdx)
-                                                                )}
-                                                                onChange={e => handleTeamMemberSocialChange(idx, sIdx, 'icon', e.value)}
-                                                                optionLabel="label"
-                                                                optionValue="value"
-                                                            />
-                                                            <InputText
-                                                                className="flex-1"
-                                                                placeholder="URL"
-                                                                value={social.url}
-                                                                onChange={e => handleTeamMemberSocialChange(idx, sIdx, 'url', e.target.value)}
-                                                            />
-                                                            {member.socials.length > 1 && (
-                                                                <Button
-                                                                    className="p-button-text p-button-danger hover:bg-red-100 rounded-full"
-                                                                    onClick={() => handleRemoveTeamMemberSocial(idx, sIdx)}
-                                                                    type="button"
-                                                                    aria-label="Remove Social"
-                                                                    title="Remove"
-                                                                    style={{
-                                                                        padding: '0.5rem',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                    }}
-                                                                >
-                                                                    <TrashIcon className="w-5 h-5 text-red-600" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                    <Button
-                                                        label="+Add Social"
-                                                        className="p-button-link text-secondary mt-2"
-                                                        onClick={() => handleAddTeamMemberSocial(idx)}
-                                                    />
-                                                </div>
                                             </div>
                                         ))}
+
                                         <Button
                                             label="+Add Team Member"
                                             className="p-button-link text-secondary mt-2"
                                             onClick={handleAddTeamMember}
                                         />
                                     </div>
+
                                 </div>
                             )}
 
@@ -1182,7 +1246,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     {/* Row 1: Title and Description */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div>
-                                            <label className="block mb-2">Section Title*</label>
+                                            <label className="block mb-[6px]">Section Title*</label>
                                             <InputText
                                                 name="howItWorksTitle"
                                                 className="w-full"
@@ -1192,7 +1256,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                             />
                                         </div>
                                         <div>
-                                            <label className="block mb-2">Section Description</label>
+                                            <label className="block mb-[6px]">Section Description</label>
                                             <InputTextarea
                                                 name="howItWorksSubtitle"
                                                 className="w-full"
@@ -1204,9 +1268,9 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     </div>
                                     {/* Steps label and number input */}
                                     <div>
-                                        <label className="block mb-2 font-semibold">Steps*</label>
+                                        <label className="block mb-[6px]">Steps*</label>
                                         <div className="flex items-center gap-4 mb-4">
-                                            <span>Number of Steps:</span>
+                                            <span className="block text-[14px] text-labelGray">Number of Steps:</span>
                                             <InputText
                                                 type="number"
                                                 min={1}
@@ -1254,38 +1318,36 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
                             {section.id === 'statistics' && (
                                 <div className="space-y-6">
-                                    <label className="block mb-2">Statistics Counters*</label>
+                                    <label className="block mb-[6px] font-medium text-sm text-gray-700">Statistics Counters*</label>
                                     {formData.statisticsStats.map((stat, idx) => (
-                                        <div key={idx} className="flex gap-4 mb-2 items-center">
+                                        <div key={idx} className="flex flex-wrap gap-3 items-center bg-white p-3 rounded shadow-sm">
+
                                             <InputText
-                                                className="w-32"
+                                                className="flex-1 min-w-[100px]"
                                                 placeholder="Value (e.g. 1500)"
                                                 value={stat.value}
                                                 onChange={e => handleStatisticsStatChange(idx, 'value', e.target.value)}
                                             />
+
                                             <InputText
-                                                className="w-16"
-                                                placeholder="Suffix (e.g. +, %, etc)"
+                                                className="flex-[0.5] min-w-[60px]"
+                                                placeholder="Suffix (+, %, etc)"
                                                 value={stat.suffix}
                                                 onChange={e => handleStatisticsStatChange(idx, 'suffix', e.target.value)}
                                             />
+
                                             <InputText
-                                                className="w-64"
+                                                className="flex-1 min-w-[120px]"
                                                 placeholder="Title (e.g. HAPPY CLIENT)"
                                                 value={stat.title}
                                                 onChange={e => handleStatisticsStatChange(idx, 'title', e.target.value)}
                                             />
+
                                             {formData.statisticsStats.length > 1 && (
                                                 <Button
-                                                    className="p-button-text p-button-danger hover:bg-red-100 rounded-full"
+                                                    className="p-button-text p-button-danger"
                                                     onClick={() => handleRemoveStatisticsStat(idx)}
                                                     type="button"
-                                                    style={{
-                                                        padding: '0.5rem',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                    }}
                                                 >
                                                     <TrashIcon className="w-5 h-5 text-red-600" />
                                                 </Button>
@@ -1299,13 +1361,14 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                         onClick={handleAddStatisticsStat}
                                     />
                                 </div>
+
                             )}
 
                             {section.id === 'testimonials' && (
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div>
-                                            <label className="block mb-2">Section Title*</label>
+                                            <label className="block mb-[6px]">Section Title*</label>
                                             <InputText
                                                 className="w-full"
                                                 placeholder="e.g. WHAT PEOPLE SAY"
@@ -1314,7 +1377,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                             />
                                         </div>
                                         <div>
-                                            <label className="block mb-2">Section Description*</label>
+                                            <label className="block mb-[6px]">Section Description*</label>
                                             <InputTextarea
                                                 className="w-full"
                                                 placeholder="e.g. Real customers reviews"
@@ -1323,9 +1386,9 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                             />
                                         </div>
                                     </div>
-                                    <label className="block mb-2">Testimonials*</label>
+                                    <label className="block mb-[6px]">Testimonials*</label>
                                     {formData.testimonialsList.map((testimonial, idx) => (
-                                        <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6 items-stretch bg-white p-4 rounded shadow-sm">
+                                        <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6 items-stretch bg-white p-2 rounded shadow-sm">
                                             {/* Left: Testimonial Text */}
                                             <div>
                                                 <InputTextarea
@@ -1338,9 +1401,9 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
                                             {/* Right: Other fields */}
                                             <div className="flex flex-col justify-between h-full gap-4">
-                                                <div className="flex gap-4">
+                                                <div className="flex flex-wrap gap-3">
                                                     <InputText
-                                                        className="w-24"
+                                                        className="min-w-[60px] w-[80px]"
                                                         type="number"
                                                         min={1}
                                                         max={5}
@@ -1348,13 +1411,15 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                         value={testimonial.rating.toString()}
                                                         onChange={e => handleTestimonialChange(idx, 'rating', Number(e.target.value))}
                                                     />
+
                                                     <InputText
-                                                        className="flex-1"
+                                                        className="flex-1 min-w-0"
                                                         placeholder="Name"
                                                         value={testimonial.name}
                                                         onChange={e => handleTestimonialChange(idx, 'name', e.target.value)}
                                                     />
                                                 </div>
+
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <InputText
                                                         className="w-full"
@@ -1406,7 +1471,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         {/* Left: Section Title */}
                                         <div>
-                                            <label className="block mb-2">Section Title*</label>
+                                            <label className="block mb-[6px]">Section Title*</label>
                                             <InputText
                                                 name="contactInfoTitle"
                                                 className="w-full"
@@ -1418,7 +1483,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
                                         {/* Right: Section Description */}
                                         <div>
-                                            <label className="block mb-2">Section Description*</label>
+                                            <label className="block mb-[6px]">Section Description*</label>
                                             <InputTextarea
                                                 name="contactInfoDescription"
                                                 className="w-full"
@@ -1431,15 +1496,24 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
                                     {/* ✅ Row 2: Contact Methods - Full Width */}
                                     <div>
-                                        <label className="block mb-2">Contact Methods*</label>
+                                        <label className="block mb-[6px] font-medium text-sm text-gray-700">Contact Methods*</label>
                                         {formData.contactMethods.map((method, idx) => (
-                                            <div key={idx} className="flex flex-wrap md:flex-nowrap gap-2 mb-2 items-center w-full relative">
-                                                {/* Icon popover */}
+                                            <div
+                                                key={idx}
+                                                className="flex flex-wrap md:flex-nowrap gap-3 mb-3 items-center bg-white p-3 rounded shadow-sm"
+                                            >
+                                                {/* Icon Button */}
                                                 <div className="relative">
                                                     <button
                                                         type="button"
                                                         className={`p-2 rounded-full border ${method.icon ? 'bg-green-500 text-white border-green-600' : 'bg-gray-100 text-gray-600 border-gray-300'} hover:bg-green-100`}
-                                                        style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                        style={{
+                                                            width: 36,
+                                                            height: 36,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}
                                                         onClick={() => setOpenIconPanelIdx(idx)}
                                                         title={contactIconOptions.find(opt => opt.value === method.icon)?.label || 'Select Icon'}
                                                     >
@@ -1457,7 +1531,13 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                                     key={opt.value}
                                                                     type="button"
                                                                     className={`p-2 rounded-full border ${method.icon === opt.value ? 'bg-green-500 text-white border-green-600' : 'bg-gray-100 text-gray-600 border-gray-300'} hover:bg-green-100`}
-                                                                    style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                    style={{
+                                                                        width: 36,
+                                                                        height: 36,
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center'
+                                                                    }}
                                                                     onClick={() => { handleContactMethodChange(idx, 'icon', opt.value); setOpenIconPanelIdx(null); }}
                                                                     title={opt.label}
                                                                 >
@@ -1468,24 +1548,23 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                     )}
                                                 </div>
 
-                                                {/* Label */}
+                                                {/* Label Input */}
                                                 <InputText
-                                                    className="min-w-[140px] max-w-[200px] w-full"
+                                                    className="flex-1 min-w-[120px]"
                                                     placeholder="Label"
                                                     value={method.label}
                                                     onChange={e => handleContactMethodChange(idx, 'label', e.target.value)}
                                                 />
 
-                                                {/* Value */}
+                                                {/* Value Input */}
                                                 <InputText
-                                                    className="w-full min-w-[260px] max-w-[320px]"
+                                                    className="flex-1 min-w-[160px]"
                                                     placeholder="Value"
                                                     value={method.value}
                                                     onChange={e => handleContactMethodChange(idx, 'value', e.target.value)}
                                                 />
 
-
-                                                {/* Remove Button */}
+                                                {/* Delete Button */}
                                                 {formData.contactMethods.length > 1 && (
                                                     <Button
                                                         className="p-button-text p-button-danger hover:bg-red-100 rounded-full"
@@ -1497,7 +1576,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                             padding: '0.5rem',
                                                             display: 'flex',
                                                             alignItems: 'center',
-                                                            justifyContent: 'center',
+                                                            justifyContent: 'center'
                                                         }}
                                                     >
                                                         <TrashIcon className="w-5 h-5 text-red-600" />
@@ -1505,12 +1584,14 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                 )}
                                             </div>
                                         ))}
+
                                         <Button
                                             label="+Add Method"
                                             className="p-button-link text-secondary mt-2"
                                             onClick={handleAddContactMethod}
                                         />
                                     </div>
+
 
                                     {/* Row 2: Form Builder + Live Preview */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1655,7 +1736,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     {/* Row 1: Blog Title (left), Blog Subtitle (right) */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div>
-                                            <label className="block mb-2">Section Title*</label>
+                                            <label className="block mb-[6px]">Section Title*</label>
                                             <InputText
                                                 className="w-full"
                                                 placeholder="Section Title (e.g. BLOG)"
@@ -1664,7 +1745,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                             />
                                         </div>
                                         <div>
-                                            <label className="block mb-2">Section Subtitle*</label>
+                                            <label className="block mb-[6px]">Section Subtitle*</label>
                                             <InputTextarea
                                                 className="w-full"
                                                 placeholder="Section Subtitle (e.g. Real customers reviews)"
@@ -1675,11 +1756,11 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     </div>
                                     {/* Row 2: Blog Posts label */}
                                     <div>
-                                        <label className="block mb-2 font-semibold">Blog Posts*</label>
+                                        <label className="block mb-[6px]">Blog Posts*</label>
                                     </div>
                                     {/* Row 3+: Blog Posts */}
                                     {formData.blogPosts.map((post, idx) => (
-                                        <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch mb-6 bg-white p-4 rounded shadow-sm">
+                                        <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch mb-6 bg-white p-2 rounded shadow-sm">
                                             {/* Left: Blog Title, Link, Upload, Date */}
                                             <div className="flex flex-col justify-between h-full gap-4">
                                                 <InputText
@@ -1781,7 +1862,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     {/* Row 1: About + Copyright */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div>
-                                            <label className="block mb-2">About*</label>
+                                            <label className="block mb-[6px]">About*</label>
                                             <InputTextarea
                                                 className="w-full"
                                                 placeholder="About store"
@@ -1791,7 +1872,7 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                             />
                                         </div>
                                         <div>
-                                            <label className="block mb-2">Copyright*</label>
+                                            <label className="block mb-[6px]">Copyright*</label>
                                             <InputText
                                                 className="w-full"
                                                 placeholder="Copyright text"
@@ -1805,9 +1886,9 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         {/* Links */}
                                         <div>
-                                            <label className="block mb-2">Links*</label>
+                                            <label className="block mb-[6px]">Links*</label>
                                             {formData.footerLinks.map((link, idx) => (
-                                                <div key={idx} className="flex gap-2 mb-2 items-center">
+                                                <div key={idx} className="flex flex-col sm:flex-row gap-2 mb-2 w-full items-stretch">
                                                     <InputText
                                                         className="min-w-[120px] md:w-40"
                                                         placeholder="Label"
@@ -1820,24 +1901,26 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                         value={link.url}
                                                         onChange={e => handleFooterListChange('footerLinks', idx, 'url', e.target.value)}
                                                     />
-                                                    {formData.footerLinks.length > 1 && (
-                                                        <Button
-                                                            className="p-button-text p-button-danger hover:bg-red-100 rounded-full border border-red-300 bg-red-50"
-                                                            onClick={() => handleRemoveFooterListItem('footerLinks', idx)}
-                                                            type="button"
-                                                            title="Remove Link"
-                                                            style={{
-                                                                padding: '0.5rem',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                minWidth: '2rem',
-                                                                minHeight: '2rem',
-                                                            }}
-                                                        >
-                                                            <TrashIcon className="w-5 h-5 text-red-600" />
-                                                        </Button>
-                                                    )}
+                                                    <div className="flex justify-end">
+                                                        {formData.footerLinks.length > 1 && (
+                                                            <Button
+                                                                className="p-button-text p-button-danger hover:bg-red-100 rounded-full border border-red-300 bg-red-50"
+                                                                onClick={() => handleRemoveFooterListItem('footerLinks', idx)}
+                                                                type="button"
+                                                                title="Remove Link"
+                                                                style={{
+                                                                    padding: '0.5rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    minWidth: '2rem',
+                                                                    minHeight: '2rem',
+                                                                }}
+                                                            >
+                                                                <TrashIcon className="w-5 h-5 text-red-600" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
                                             <Button
@@ -1849,9 +1932,10 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
                                         {/* Services */}
                                         <div>
-                                            <label className="block mb-2">Services*</label>
+                                            <label className="block mb-[6px]">Services*</label>
                                             {formData.footerServices.map((service, idx) => (
-                                                <div key={idx} className="flex gap-2 mb-2 items-center">
+                                                <div key={idx} className="flex flex-col sm:flex-row gap-2 mb-2 w-full items-stretch">
+
                                                     <InputText
                                                         className="min-w-[120px] md:w-40"
                                                         placeholder="Label"
@@ -1864,24 +1948,26 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                         value={service.url}
                                                         onChange={e => handleFooterListChange('footerServices', idx, 'url', e.target.value)}
                                                     />
-                                                    {formData.footerServices.length > 1 && (
-                                                        <Button
-                                                            className="p-button-text p-button-danger hover:bg-red-100 rounded-full border border-red-300 bg-red-50"
-                                                            onClick={() => handleRemoveFooterListItem('footerServices', idx)}
-                                                            type="button"
-                                                            title="Remove Service"
-                                                            style={{
-                                                                padding: '0.5rem',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                minWidth: '2rem',
-                                                                minHeight: '2rem',
-                                                            }}
-                                                        >
-                                                            <TrashIcon className="w-5 h-5 text-red-600" />
-                                                        </Button>
-                                                    )}
+                                                    <div className="flex justify-end">
+                                                        {formData.footerServices.length > 1 && (
+                                                            <Button
+                                                                className="p-button-text p-button-danger hover:bg-red-100 rounded-full border border-red-300 bg-red-50"
+                                                                onClick={() => handleRemoveFooterListItem('footerServices', idx)}
+                                                                type="button"
+                                                                title="Remove Service"
+                                                                style={{
+                                                                    padding: '0.5rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    minWidth: '2rem',
+                                                                    minHeight: '2rem',
+                                                                }}
+                                                            >
+                                                                <TrashIcon className="w-5 h-5 text-red-600" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
                                             <Button
@@ -1896,9 +1982,10 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         {/* Socials */}
                                         <div>
-                                            <label className="block mb-2">Socials*</label>
+                                            <label className="block mb-[6px]">Socials*</label>
                                             {formData.footerSocials.map((social, idx) => (
-                                                <div key={idx} className="flex gap-2 mb-2 items-center">
+                                                <div key={idx} className="flex flex-col sm:flex-row gap-2 mb-2 w-full items-stretch">
+
                                                     <Dropdown
                                                         className="min-w-[120px] md:w-40"
                                                         placeholder="Select Social Platform"
@@ -1918,25 +2005,27 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                         value={social.url}
                                                         onChange={e => handleFooterListChange('footerSocials', idx, 'url', e.target.value)}
                                                     />
-                                                    {formData.footerSocials.length > 1 && (
-                                                        <Button
-                                                            className="p-button-text p-button-danger hover:bg-red-100 rounded-full border border-red-300 bg-red-50"
-                                                            onClick={() => handleRemoveFooterListItem('footerSocials', idx)}
-                                                            type="button"
-                                                            aria-label="Remove Social"
-                                                            title="Remove Social"
-                                                            style={{
-                                                                padding: '0.5rem',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                minWidth: '2rem',
-                                                                minHeight: '2rem',
-                                                            }}
-                                                        >
-                                                            <TrashIcon className="w-5 h-5 text-red-600" />
-                                                        </Button>
-                                                    )}
+                                                    <div className="flex justify-end">
+                                                        {formData.footerSocials.length > 1 && (
+                                                            <Button
+                                                                className="p-button-text p-button-danger hover:bg-red-100 rounded-full border border-red-300 bg-red-50"
+                                                                onClick={() => handleRemoveFooterListItem('footerSocials', idx)}
+                                                                type="button"
+                                                                aria-label="Remove Social"
+                                                                title="Remove Social"
+                                                                style={{
+                                                                    padding: '0.5rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    minWidth: '2rem',
+                                                                    minHeight: '2rem',
+                                                                }}
+                                                            >
+                                                                <TrashIcon className="w-5 h-5 text-red-600" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
                                             <Button
@@ -1948,9 +2037,10 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
                                         {/* Policies */}
                                         <div>
-                                            <label className="block mb-2">Policies*</label>
+                                            <label className="block mb-[6px]">Policies*</label>
                                             {formData.footerPolicies.map((policy, idx) => (
-                                                <div key={idx} className="flex gap-2 mb-2 items-center">
+                                                <div key={idx} className="flex flex-col sm:flex-row gap-2 mb-2 w-full items-stretch">
+
                                                     <InputText
                                                         className="min-w-[120px] md:w-40"
                                                         placeholder="Label"
@@ -1963,24 +2053,26 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
                                                         value={policy.url}
                                                         onChange={e => handleFooterListChange('footerPolicies', idx, 'url', e.target.value)}
                                                     />
-                                                    {formData.footerPolicies.length > 1 && (
-                                                        <Button
-                                                            className="p-button-text p-button-danger hover:bg-red-100 rounded-full border border-red-300 bg-red-50"
-                                                            onClick={() => handleRemoveFooterListItem('footerPolicies', idx)}
-                                                            type="button"
-                                                            title="Remove Policy"
-                                                            style={{
-                                                                padding: '0.5rem',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                minWidth: '2rem',
-                                                                minHeight: '2rem',
-                                                            }}
-                                                        >
-                                                            <TrashIcon className="w-5 h-5 text-red-600" />
-                                                        </Button>
-                                                    )}
+                                                    <div className="flex justify-end">
+                                                        {formData.footerPolicies.length > 1 && (
+                                                            <Button
+                                                                className="p-button-text p-button-danger hover:bg-red-100 rounded-full border border-red-300 bg-red-50"
+                                                                onClick={() => handleRemoveFooterListItem('footerPolicies', idx)}
+                                                                type="button"
+                                                                title="Remove Policy"
+                                                                style={{
+                                                                    padding: '0.5rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    minWidth: '2rem',
+                                                                    minHeight: '2rem',
+                                                                }}
+                                                            >
+                                                                <TrashIcon className="w-5 h-5 text-red-600" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
                                             <Button
@@ -2000,26 +2092,46 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
             {/* Floating Action Bar */}
             <div
-                className="fixed bottom-0 left-0 w-full z-50 bg-white shadow-custom flex justify-center items-center py-4 !space-x-3"
+                className="fixed bottom-0 left-0 w-full z-50 bg-white shadow-custom flex flex-wrap sm:flex-nowrap justify-center items-center gap-2 px-2 py-2"
                 style={{ maxWidth: '100vw' }}
             >
-                <Button label="Cancel" className="btn btn-outline" onClick={handleCancel} outlined />
-                <Button label="Preview" className="btn btn-secondary" onClick={async () => {
-                    // Save latest previewData (already handled by effect, but ensure up-to-date)
-                    const formDataWithImages = await convertFormDataImages(formData);
-                    const previewData = {
-                        formData: { ...formDataWithImages, contactFormFields },
-                        selectedSections
-                    };
-                    localStorage.setItem('previewData', JSON.stringify(previewData));
-                    window.open('/store-preview', '_blank');
-                }} />
-                <Button label="Publish" className="btn btn-primary" onClick={handlePublish} disabled={!!publishedId} />
+                <Button
+                    label="Cancel"
+                    className="btn btn-outline w-auto min-w-[80px] px-3 py-1 text-sm"
+                    onClick={handleCancel}
+                    outlined
+                />
+                <Button
+                    label="Preview"
+                    className="btn btn-secondary w-auto min-w-[80px] px-3 py-1 text-sm"
+                    onClick={async () => {
+                        const formDataWithImages = await convertFormDataImages(formData);
+                        const previewData = { formData: { ...formDataWithImages, contactFormFields }, selectedSections };
+                        localStorage.setItem('previewData', JSON.stringify(previewData));
+                        window.open('/store-preview', '_blank');
+                    }}
+                />
+                <Button
+                    label="Publish"
+                    className="btn btn-primary w-auto min-w-[80px] px-3 py-1 text-sm"
+                    onClick={handlePublish}
+                    disabled={!!publishedId}
+                />
                 {publishedId && (
-                    <Button label="View Live Store" className="btn btn-success" onClick={() => window.open(`/store/${publishedId}`, '_blank')} />
+                    <Button
+                        label="View"
+                        className="btn btn-success w-auto min-w-[80px] px-3 py-1 text-sm"
+                        onClick={() => window.open(`/store/${publishedId}`, '_blank')}
+                    />
                 )}
-                <Button label="Next" className="btn btn-primary" onClick={handleNext} />
+                <Button
+                    label="Next"
+                    className="btn btn-primary w-auto min-w-[80px] px-3 py-1 text-sm"
+                    onClick={handleNext}
+                />
             </div>
+
+
         </div>
     );
 };

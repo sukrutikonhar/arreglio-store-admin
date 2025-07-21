@@ -6,6 +6,8 @@ import WebsiteSettings from "../pages/WebsiteSettings";
 import GeneralSettings from "../pages/GeneralSettings";
 import FinancialSettings from "../pages/FinancialSettings"; // Import new component
 import StorePage from '../pages/StorePage';
+import Overview from '../pages/Overview';
+import OrderDetails from '../pages/OrderDetails';
 import { useLocation } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 
@@ -57,6 +59,8 @@ export default function AppRouter() {
                 <Route path="/" element={<Layout />}>
                     {/* Main pages */}
                     <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="overview" element={<Overview />} />
+                    <Route path="/order/:id" element={<OrderDetails />} />
 
                     {/* Settings + nested routes */}
                     <Route path="settings" element={<Settings />}>

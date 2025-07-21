@@ -1,11 +1,12 @@
 import { InputText } from "primereact/inputtext";
 import { Button } from 'primereact/button';
+import { useNavigate } from 'react-router-dom';
 
 export default function FinancialSettings() {
+    const navigate = useNavigate();
     return (
         <div className="">
-            <h4 className="page-title">Financial Settings</h4>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-3 gap-6">
                 <div className="field">
                     <label htmlFor="companyName" className="block mb-2">Company Name</label>
                     <InputText id="companyName" className="w-full" placeholder="Enter company name" />
@@ -45,8 +46,8 @@ export default function FinancialSettings() {
             </div>
             {/* Action Buttons */}
             <div className="mt-12 flex !space-x-3">
-                <Button label="Cancel" className="btn btn-outline" outlined />
-                <Button label="Save" className="btn btn-primary" />
+                <Button label="Cancel" className="btn btn-outline" onClick={() => navigate('/settings/general')} outlined />
+                <Button label="Next" className="btn btn-primary" onClick={() => navigate('/dashboard')} />
             </div>
         </div>
     );

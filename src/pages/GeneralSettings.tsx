@@ -10,8 +10,10 @@ import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { Tooltip } from 'primereact/tooltip';
+import { useNavigate } from 'react-router-dom';
 
 export default function GeneralSettings() {
+    const navigate = useNavigate();
     const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
     const [selectedOpeningHour, setSelectedOpeningHour] = useState<any>(null);
     const [editDialogVisible, setEditDialogVisible] = useState(false);
@@ -29,6 +31,12 @@ export default function GeneralSettings() {
         opens: '',
         closes: '',
         status: 'Open'
+    });
+    const [openHoursErrors, setOpenHoursErrors] = useState({
+        day: false,
+        opens: false,
+        closes: false,
+        status: false
     });
 
     const daysOfWeek = [
@@ -64,17 +72,35 @@ export default function GeneralSettings() {
         { label: 'No', value: false }
     ];
 
+    const availableDays = daysOfWeek.filter(
+        (day) => !openingHours.some((item) => item.day === day)
+    );
+
+
     const handleCreate = () => {
+        const errors = {
+            day: !newOpeningHours.day,
+            opens: !newOpeningHours.opens,
+            closes: !newOpeningHours.closes,
+            status: !newOpeningHours.status
+        };
+        setOpenHoursErrors(errors);
+        const hasError = Object.values(errors).some(Boolean);
+        if (hasError) return;
         setOpeningHours([...openingHours, newOpeningHours]);
         setShowCreateDialog(false);
         setNewOpeningHours({ day: '', opens: '', closes: '', status: 'Open' });
+        setOpenHoursErrors({ day: false, opens: false, closes: false, status: false });
     };
 
     const dialogFooter = (
         <div className="flex justify-end gap-2">
-            <Button label="Cancel" className="p-button-text"
-                onClick={() => setShowCreateDialog(false)} />
-            <Button label="Save" className="p-button-primary"
+            <Button label="Cancel" className="p-button-primary" outlined
+                onClick={() => {
+                    setShowCreateDialog(false);
+                    setOpenHoursErrors({ day: false, opens: false, closes: false, status: false });
+                }} />
+            <Button label="Add" className="p-button-primary"
                 onClick={handleCreate} />
         </div>
     );
@@ -170,20 +196,45 @@ export default function GeneralSettings() {
                 visible={showCreateDialog}
                 style={{ width: '500px' }}
                 footer={dialogFooter}
-                onHide={() => setShowCreateDialog(false)}>
-                <div className="grid gap-4">
-                    <div className="field">
-                        <label htmlFor="day" className="block mb-2">Day</label>
-                        <Dropdown
-                            id="day"
-                            options={daysOfWeek.map(d => ({ label: d, value: d }))}
-                            value={newOpeningHours.day}
-                            onChange={(e) => setNewOpeningHours({ ...newOpeningHours, day: e.value })}
-                            placeholder="Select day"
-                            className="w-full"
-                        />
-                    </div>
+                onHide={() => {
+                    setShowCreateDialog(false);
+                    setOpenHoursErrors({ day: false, opens: false, closes: false, status: false });
+                }}>
 
+                <div className="grid gap-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="field">
+                            <label htmlFor="day" className="block mb-2">Day</label>
+                            <Dropdown
+                                id="day"
+                                options={availableDays.map(d => ({ label: d, value: d }))}
+                                value={newOpeningHours.day}
+                                onChange={e => {
+                                    setNewOpeningHours({ ...newOpeningHours, day: e.value });
+                                    setOpenHoursErrors(prev => ({ ...prev, day: false }));
+                                }}
+                                placeholder="Select day"
+                                className="w-full"
+                                invalid={openHoursErrors.day}
+                            />
+                            {openHoursErrors.day && <span className="text-xs text-red-500">Day is required</span>}
+                        </div>
+                        <div className="field">
+                            <label htmlFor="status" className="block mb-2">Status</label>
+                            <Dropdown
+                                id="status"
+                                options={statusOptions}
+                                value={newOpeningHours.status}
+                                onChange={e => {
+                                    setNewOpeningHours({ ...newOpeningHours, status: e.value });
+                                    setOpenHoursErrors(prev => ({ ...prev, status: false }));
+                                }}
+                                className="w-full"
+                                invalid={openHoursErrors.status}
+                            />
+                            {openHoursErrors.status && <span className="text-xs text-red-500">Status is required</span>}
+                        </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="field">
                             <label htmlFor="opens" className="block mb-2">Opening Time</label>
@@ -191,32 +242,30 @@ export default function GeneralSettings() {
                                 id="opens"
                                 type="time"
                                 value={newOpeningHours.opens}
-                                onChange={(e) => setNewOpeningHours({ ...newOpeningHours, opens: e.target.value })}
+                                onChange={e => {
+                                    setNewOpeningHours({ ...newOpeningHours, opens: e.target.value });
+                                    setOpenHoursErrors(prev => ({ ...prev, opens: false }));
+                                }}
                                 className="w-full"
+                                invalid={openHoursErrors.opens}
                             />
+                            {openHoursErrors.opens && <span className="text-xs text-red-500">Opening time is required</span>}
                         </div>
-
                         <div className="field">
                             <label htmlFor="closes" className="block mb-2">Closing Time</label>
                             <InputText
                                 id="closes"
                                 type="time"
                                 value={newOpeningHours.closes}
-                                onChange={(e) => setNewOpeningHours({ ...newOpeningHours, closes: e.target.value })}
+                                onChange={e => {
+                                    setNewOpeningHours({ ...newOpeningHours, closes: e.target.value });
+                                    setOpenHoursErrors(prev => ({ ...prev, closes: false }));
+                                }}
                                 className="w-full"
+                                invalid={openHoursErrors.closes}
                             />
+                            {openHoursErrors.closes && <span className="text-xs text-red-500">Closing time is required</span>}
                         </div>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="status" className="block mb-2">Status</label>
-                        <Dropdown
-                            id="status"
-                            options={statusOptions}
-                            value={newOpeningHours.status}
-                            onChange={(e) => setNewOpeningHours({ ...newOpeningHours, status: e.value })}
-                            className="w-full"
-                        />
                     </div>
                 </div>
             </Dialog>
@@ -226,7 +275,7 @@ export default function GeneralSettings() {
                 onHide={cancelDelete}
                 footer={
                     <div className="flex justify-end gap-2">
-                        <Button label="Cancel" className="p-button-text" onClick={cancelDelete} />
+                        <Button label="Cancel" className="p-button-primary" outlined onClick={cancelDelete} />
                         <Button label="Delete" className="p-button-danger" onClick={confirmDelete} />
                     </div>
                 }>
@@ -254,11 +303,11 @@ export default function GeneralSettings() {
                 <Dialog
                     header="Edit Delivery Hour"
                     visible={editDialogVisible}
-                    style={{ width: '500px' }}
+                    style={{ width: '600px' }}
                     onHide={() => setEditDialogVisible(false)}
                 >
                     {editedDeliverySlot && (
-                        <div className="grid gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Region Dropdown */}
                             <div className="field">
                                 <label htmlFor="region" className="block mb-2">Region</label>
@@ -280,9 +329,9 @@ export default function GeneralSettings() {
                                 <InputText
                                     id="interval"
                                     type="time"
-                                    value={editedDeliverySlot.interval}
+                                    value={editedDeliverySlot.interval.length === 8 ? editedDeliverySlot.interval.slice(0, 5) : editedDeliverySlot.interval}
                                     onChange={(e) =>
-                                        setEditedDeliverySlot((prev: any) => ({ ...prev, interval: e.target.value }))
+                                        setEditedDeliverySlot((prev: any) => ({ ...prev, interval: e.target.value.length === 5 ? e.target.value + ':00' : e.target.value }))
                                     }
                                     className="w-full"
                                 />
@@ -346,22 +395,27 @@ export default function GeneralSettings() {
                                 />
                             </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex justify-end gap-2 mt-4">
+                            {/* Full Width for Buttons */}
+                            <div className="md:col-span-2 flex justify-end gap-2 mt-4">
                                 <Button
                                     label="Cancel"
-                                    className="p-button-text"
+                                    className="p-button-primary"
+                                    outlined
                                     onClick={() => setEditDialogVisible(false)}
                                 />
                                 <Button
                                     label="Save"
                                     className="p-button-primary"
                                     onClick={() => {
-                                        setDeliverySlots((prev) =>
-                                            prev.map((slot) =>
-                                                slot === selectedDeliverySlot ? editedDeliverySlot : slot
-                                            )
-                                        );
+                                        setDeliverySlots((prev) => {
+                                            const idx = prev.findIndex(slot => slot === selectedDeliverySlot);
+                                            if (idx !== -1) {
+                                                const updated = [...prev];
+                                                updated[idx] = { ...editedDeliverySlot };
+                                                return updated;
+                                            }
+                                            return prev;
+                                        });
                                         setEditDialogVisible(false);
                                     }}
                                 />
@@ -369,12 +423,13 @@ export default function GeneralSettings() {
                         </div>
                     )}
                 </Dialog>
+
             </div>
 
             {/* Action Buttons */}
             <div className="mt-12 flex !space-x-3">
-                <Button label="Cancel" className="btn btn-outline" outlined />
-                <Button label="Next" className="btn btn-primary" />
+                <Button label="Cancel" className="btn btn-outline" onClick={() => navigate('/settings/website')} outlined />
+                <Button label="Next" className="btn btn-primary" onClick={() => navigate('/settings/financial')} />
             </div>
         </div>
     );

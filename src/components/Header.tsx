@@ -30,7 +30,7 @@ export default function Header() {
 
     return (
         <header className="w-full sticky top-0 z-50">
-            <div className="header-top flex items-center justify-between px-4 py-2">
+            <div className="header-top flex items-center justify-between px-0 md:px-4 py-2">
                 {/* Left section: menu icon always visible; search icon/input on larger screens */}
                 <div className="flex items-center space-x-4">
                     <button onClick={handleMenuClick} className="header-icon">
