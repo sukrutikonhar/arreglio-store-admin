@@ -12,6 +12,7 @@ import { Checkbox } from 'primereact/checkbox';
 import { HiOutlinePhone, HiOutlineEnvelope, HiOutlineMapPin } from 'react-icons/hi2';
 import { FloatLabel } from 'primereact/floatlabel';
 import { Calendar } from 'primereact/calendar';
+import { storeConfigService } from '../services/storeConfig';
 
 type Section = {
     id: string;
@@ -57,6 +58,8 @@ type WebsiteFormProps = {
     selectedOptionalSections: string[];
     onCancel: () => void;
     onSave: () => void;
+    initialFormData?: any;
+    initialSelectedSections?: string[];
 };
 
 type ContactFormField = {
@@ -137,7 +140,9 @@ async function convertFormDataImages(formData: any) {
     return newFormData;
 }
 
-const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOptionalSections, onCancel, onSave }) => {
+const STORE_ID = 'main-store';
+
+const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOptionalSections, onCancel, onSave, initialFormData, initialSelectedSections }) => {
     // const navigate = useNavigate();
     // Map from optional section keys to section ids in the sections array
     const optionalSectionKeyToId: Record<string, string> = {
@@ -668,14 +673,20 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
 
     const handlePublish = async () => {
         // Generate a unique ID (timestamp-based for demo)
-        const id = 'store-' + Date.now();
+        const id = STORE_ID;
         const formDataWithImages = await convertFormDataImages(formData);
         const storeData = {
             formData: { ...formDataWithImages, contactFormFields },
             selectedSections
         };
-        localStorage.setItem(id, JSON.stringify(storeData));
+        await storeConfigService.saveStoreConfig(id, storeData);
         setPublishedId(id);
+        toast.current?.show({
+            severity: 'success',
+            summary: 'Published',
+            detail: `Store page published! Public link: /store/${id}`,
+            life: 4000
+        });
     };
 
     // Add real-time previewData update effect
@@ -694,6 +705,22 @@ const WebsiteForm: React.FC<WebsiteFormProps> = ({ mandatorySections, selectedOp
     useEffect(() => {
         sectionRefs.current = filteredSections.map((_, i) => sectionRefs.current[i] || null);
     }, [filteredSections]);
+
+    useEffect(() => {
+        // On mount, try to load existing config for editing
+        storeConfigService.getStoreConfig(STORE_ID).then(data => {
+            setFormData(data.formData || {});
+            // Optionally set selected sections if you store them
+        }).catch(() => { });
+    }, []);
+
+    // If initialFormData is provided, prefill the form
+    useEffect(() => {
+        if (initialFormData) {
+            setFormData(initialFormData);
+        }
+        // Optionally, handle initialSelectedSections if you want to prefill optional section toggles
+    }, [initialFormData]);
 
     return (
         <div className="doc-tabpanel">

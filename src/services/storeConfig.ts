@@ -4,31 +4,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.arreglio.
 
 export const storeConfigService = {
   // Save store configuration
-  async saveStoreConfig(storeId: string, config: FormData) {
-    const response = await fetch(`${API_BASE_URL}/stores/${storeId}/config`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(config),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to save store configuration");
-    }
-
-    return response.json();
+  async saveStoreConfig(storeId: string, config: any) {
+    localStorage.setItem(`storeConfig_${storeId}`, JSON.stringify(config));
+    return { success: true };
   },
 
   // Get store configuration
   async getStoreConfig(storeId: string) {
-    const response = await fetch(`${API_BASE_URL}/stores/${storeId}/config`);
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch store configuration");
-    }
-
-    return response.json();
+    const data = localStorage.getItem(`storeConfig_${storeId}`);
+    if (!data) throw new Error("No config found");
+    return JSON.parse(data);
   },
 
   // Upload store assets (images, etc.)

@@ -1,5 +1,3 @@
-import React from "react";
-import { FormData } from "../types/store";
 import { HeaderSection } from "../components/store/HeaderSection";
 import { HeroSection } from "../components/store/HeroSection";
 import { WhatWeDoSection } from "../components/store/WhatWeDoSection";
@@ -10,52 +8,13 @@ import { TestimonialsSection } from "../components/store/TestimonialsSection";
 import { ContactInfoSection } from "../components/store/ContactInfoSection";
 import { BlogSection } from "../components/store/BlogSection";
 import { FooterSection } from "../components/store/FooterSection";
-import { useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { storeConfigService } from '../services/storeConfig';
-import { useNavigate } from 'react-router-dom';
 
-const HEADER_HEIGHT = 80; // match your header's actual height
+const HEADER_HEIGHT = 80;
 
-const StorePage: React.FC = () => {
-    const { storeId } = useParams();
-    const [formData, setFormData] = useState<any>(null);
-    const [selectedSections, setSelectedSections] = useState<string[]>([]);
-    const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        if (!storeId) return;
-        storeConfigService.getStoreConfig(storeId).then(data => {
-            setFormData(data.formData);
-            setSelectedSections(data.selectedSections || []);
-            setLoading(false);
-        }).catch(() => setLoading(false));
-    }, [storeId]);
-
-    if (loading) return <div>Loading...</div>;
-    if (!formData) return <div>Store not found</div>;
-
-    const handleEdit = () => {
-        navigate('/settings/website', {
-            state: {
-                formData,
-                selectedSections,
-            },
-        });
-    };
-
+export default function StorePagePreview({ formData, selectedSections }: { formData: any, selectedSections: string[] }) {
     const hasHero = selectedSections.includes("Hero");
     return (
         <>
-            <div className="w-full flex justify-end p-4 bg-gray-50 border-b sticky top-0 z-50">
-                <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition"
-                    onClick={handleEdit}
-                >
-                    Edit Page
-                </button>
-            </div>
             {/* fixed header */}
             {selectedSections.includes("Header") && (
                 <HeaderSection
@@ -66,7 +25,6 @@ const StorePage: React.FC = () => {
                     sticky={true}
                 />
             )}
-
             {/* hero floats underneath transparent header */}
             {hasHero && (
                 <HeroSection
@@ -75,7 +33,6 @@ const StorePage: React.FC = () => {
                     services={Array.isArray(formData.services) ? formData.services : []}
                 />
             )}
-
             {/* everything else gets pushed down by header height */}
             <div
                 style={{
@@ -83,10 +40,7 @@ const StorePage: React.FC = () => {
                 }}
             >
                 {selectedSections.includes("What We Do") && (
-                    <WhatWeDoSection
-                        whatWeDo={formData.whatWeDo}
-                        aboutUsImage={formData.aboutUsImage}
-                    />
+                    <WhatWeDoSection whatWeDo={formData.whatWeDo} aboutUsImage={formData.aboutUsImage} />
                 )}
                 {selectedSections.includes("Our Team") && (
                     <OurTeamSection
@@ -143,6 +97,4 @@ const StorePage: React.FC = () => {
             </div>
         </>
     );
-};
-
-export default StorePage;
+} 

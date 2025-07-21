@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import { LogOut, Settings, User } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
-// Define prop types
 interface UserPanelProps {
     activeIcon: "notifications" | "language" | "user" | "settings" | "menu" | null;
     setActiveIcon: (icon: "notifications" | "language" | "user" | "settings" | "menu" | null) => void;
@@ -10,6 +10,7 @@ interface UserPanelProps {
 const UserPanel = ({ activeIcon, setActiveIcon }: UserPanelProps) => {
     const panelRef = useRef<HTMLDivElement>(null);
     const isOpen = activeIcon === "user";
+    const { user, isAuthenticated, logout } = useAuth();
 
     // Close panel when clicking outside
     useEffect(() => {
@@ -23,6 +24,8 @@ const UserPanel = ({ activeIcon, setActiveIcon }: UserPanelProps) => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [setActiveIcon]);
+
+    if (!isAuthenticated) return null;
 
     return (
         <div className="relative" ref={panelRef}>
@@ -43,8 +46,8 @@ const UserPanel = ({ activeIcon, setActiveIcon }: UserPanelProps) => {
                 <div className="absolute right-0 mt-4 w-56 bg-white text-black shadow-lg rounded-lg z-50">
                     {/* User Info */}
                     <div className="p-4 border-b">
-                        <p className="font-semibold">John Doe</p>
-                        <p className="text-sm text-gray-500">john.doe@example.com</p>
+                        <p className="font-semibold">{user?.name || "User"}</p>
+                        <p className="text-sm text-gray-500">{user?.email}</p>
                     </div>
 
                     {/* Menu Options */}
@@ -56,7 +59,13 @@ const UserPanel = ({ activeIcon, setActiveIcon }: UserPanelProps) => {
                             <Settings className="w-5 h-5 mr-2 hover:text-blue-500" /> Settings
                         </li>
                         <li className="flex items-center p-2 hover:bg-red-100 rounded cursor-pointer text-red-600">
-                            <LogOut className="w-5 h-5 mr-2 hover:text-red-700" /> Logout
+                            <button
+                                onClick={e => { e.stopPropagation(); logout(); }}
+                                className="flex items-center w-full bg-transparent border-0 p-0 m-0 text-red-600"
+                                style={{ outline: "none" }}
+                            >
+                                <LogOut className="w-5 h-5 mr-2 hover:text-red-700" /> Logout
+                            </button>
                         </li>
                     </ul>
                 </div>

@@ -11,6 +11,13 @@ import OrderDetails from '../pages/OrderDetails';
 import { useLocation } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import OverviewFit from "../pages/Overveiw-fit";
+import StorePagePreview from '../pages/StorePagePreview';
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import Login from '../pages/auth/Login';
+import Register from '../pages/auth/Register';
+import ForgotPassword from '../pages/auth/ForgotPassword';
+import type { ReactElement } from 'react';
+import Welcome from '../pages/Welcome';
 
 function StorePreviewRoute() {
     const location = useLocation();
@@ -32,47 +39,40 @@ function StorePreviewRoute() {
     }
 
     if (!formData || !selectedSections) return <div>No preview data available.</div>;
-    return <StorePage formData={formData} selectedSections={selectedSections} previewMode={false} />;
+    return <StorePagePreview formData={formData} selectedSections={selectedSections} />;
 }
 
-function LiveStoreRoute() {
-    const { id } = useParams();
-    if (!id) return <div>No store ID.</div>;
-    const raw = localStorage.getItem(id);
-    if (!raw) return <div>Store not found in localStorage for key: {id}</div>;
-    let parsed;
-    try {
-        parsed = JSON.parse(raw);
-    } catch (e) {
-        return <div>Failed to parse store data: {String(e)}<br />Raw: {raw}</div>;
+function PrivateRoute({ children }: { children: ReactElement }) {
+    const { isAuthenticated } = useAuth();
+    if (!isAuthenticated) {
+        window.location.href = '/auth/login';
+        return null;
     }
-    const { formData, selectedSections } = parsed || {};
-    if (!formData || !selectedSections) {
-        return <div>Invalid store data: {JSON.stringify(parsed)}</div>;
-    }
-    return <StorePage formData={formData} selectedSections={selectedSections} previewMode={false} />;
+    return children;
 }
 
 export default function AppRouter() {
+    const { isAuthenticated } = useAuth();
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<Layout />}>
-                    {/* Main pages */}
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="overview" element={<Overview />} />
-                    <Route path="overview-2" element={<OverviewFit />} />
-                    <Route path="/order/:id" element={<OrderDetails />} />
-
-                    {/* Settings + nested routes */}
-                    <Route path="settings" element={<Settings />}>
+                <Route path="/auth/login" element={<Login />} />
+                <Route path="/auth/register" element={<Register />} />
+                <Route path="/auth/forgot" element={<ForgotPassword />} />
+                <Route path="/" element={isAuthenticated ? <Layout /> : <Welcome />}>
+                    {/* Protected routes inside Layout */}
+                    <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                    <Route path="overview" element={<PrivateRoute><Overview /></PrivateRoute>} />
+                    <Route path="overview-2" element={<PrivateRoute><OverviewFit /></PrivateRoute>} />
+                    <Route path="order/:id" element={<PrivateRoute><OrderDetails /></PrivateRoute>} />
+                    <Route path="settings" element={<PrivateRoute><Settings /></PrivateRoute>}>
                         <Route path="website" element={<WebsiteSettings />} />
                         <Route path="general" element={<GeneralSettings />} />
-                        <Route path="financial" element={<FinancialSettings />} /> {/* New Route */}
+                        <Route path="financial" element={<FinancialSettings />} />
                     </Route>
                 </Route>
                 <Route path="/store-preview" element={<StorePreviewRoute />} />
-                <Route path="/store/:id" element={<LiveStoreRoute />} />
+                <Route path="/store/:storeId" element={<StorePage />} />
             </Routes>
         </BrowserRouter>
     );

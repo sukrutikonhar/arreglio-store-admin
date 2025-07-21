@@ -1,20 +1,42 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "primereact/button";
 import WebsiteForm from "./WebsiteForm";
 
 export default function WebsiteSettings() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const initialFormData = location.state?.formData;
+    const initialSelectedSections = location.state?.selectedSections;
 
-    const [addedOptional, setAddedOptional] = useState({
-        ourTeam: false,
-        howItWorks: false,
-        statistics: false,
-        testimonials: false,
-        blogSection: false,
+    const [addedOptional, setAddedOptional] = useState(() => {
+        if (initialSelectedSections) {
+            // Map selectedSections to addedOptional keys
+            const mapping: Record<string, string> = {
+                'Our Team': 'ourTeam',
+                'How It Works': 'howItWorks',
+                'Statistics': 'statistics',
+                'Testimonials': 'testimonials',
+                'Blog Section': 'blogSection',
+            };
+            const result: any = {};
+            Object.values(mapping).forEach(key => {
+                result[key] = initialSelectedSections.includes(
+                    key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim()
+                );
+            });
+            return result;
+        }
+        return {
+            ourTeam: false,
+            howItWorks: false,
+            statistics: false,
+            testimonials: false,
+            blogSection: false,
+        };
     });
 
-    const [isFormVisible, setIsFormVisible] = useState(false);
+    const [isFormVisible, setIsFormVisible] = useState(!!initialFormData);
 
     // Toggle optional sections
     const handleToggle = (section: keyof typeof addedOptional) => {
@@ -51,13 +73,17 @@ export default function WebsiteSettings() {
         (key) => addedOptional[key as keyof typeof addedOptional]
     );
 
+    // When showing the form, pass initialFormData and initialSelectedSections to WebsiteForm
     if (isFormVisible) {
-        // Pass only the mandatory sections and selected optional sections to WebsiteForm
         return <WebsiteForm
             mandatorySections={mandatorySections}
-            selectedOptionalSections={selectedOptionalSections}
+            selectedOptionalSections={Object.keys(addedOptional).filter(
+                (key) => addedOptional[key as keyof typeof addedOptional]
+            )}
             onCancel={handleCancel}
             onSave={handleSave}
+            initialFormData={initialFormData}
+            initialSelectedSections={initialSelectedSections}
         />;
     }
 

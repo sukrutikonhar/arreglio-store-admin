@@ -1,6 +1,11 @@
 // src/App.tsx
+import { AuthProvider } from './context/AuthContext';
 import AppRouter from "./router/AppRouter";
 
 export default function App() {
-  return <AppRouter />;
+  return (
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
+  );
 }
