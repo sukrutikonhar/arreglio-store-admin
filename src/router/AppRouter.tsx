@@ -10,11 +10,7 @@ import Overview from '../pages/Overview';
 import OrderDetails from '../pages/OrderDetails';
 import { useLocation } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
-<<<<<<< Updated upstream
-import OverviewFit from "../pages/Overveiw-fit";
-=======
 // import OverviewFit from "../pages/Overveiw-fit";
->>>>>>> Stashed changes
 
 function StorePreviewRoute() {
     const location = useLocation();
@@ -65,11 +61,7 @@ export default function AppRouter() {
                     {/* Main pages */}
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route path="overview" element={<Overview />} />
-<<<<<<< Updated upstream
-                    <Route path="overview-2" element={<OverviewFit />} />
-=======
                     {/* <Route path="overview-2" element={<OverviewFit />} /> */}
->>>>>>> Stashed changes
                     <Route path="/order/:id" element={<OrderDetails />} />
 
                     {/* Settings + nested routes */}
