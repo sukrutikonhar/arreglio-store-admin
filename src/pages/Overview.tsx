@@ -486,7 +486,7 @@ export default function Overview() {
                         />
                     </div>
                     <div>
-                        <label className="block underline text-sm font-medium text-gray-700 mb-1">Upload File (Optional)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Upload File (Optional)</label>
                         <FileUpload
                             mode="basic"
                             name="file"
