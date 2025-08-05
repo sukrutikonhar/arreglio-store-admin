@@ -4,10 +4,12 @@ import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { FileUpload } from 'primereact/fileupload';
+import { TieredMenu } from 'primereact/tieredmenu';
+import type { TieredMenu as TieredMenuType } from 'primereact/tieredmenu';
 import { DatePicker } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {
-    ChevronLeft, ChevronRight, MessageCircle, Paperclip, Clock, AlertCircle, CheckCircle2, PauseCircle, Bolt, XCircle, Filter, Plus, Edit, ArrowRight,
+    ChevronLeft, ChevronRight, MessageCircle, Paperclip, Clock, AlertCircle, CheckCircle2, PauseCircle, Bolt, XCircle, Filter, Plus,
     MoreVertical
 } from 'lucide-react';
 
@@ -64,8 +66,6 @@ interface NewOrder {
 export default function Overview() {
     const [collapsed, setCollapsed] = useState(statuses.map(() => false));
     const [orders, setOrders] = useState(mockOrders);
-    const [optionsPanel, setOptionsPanel] = useState<{ open: boolean, orderId: number | null, x: number, y: number }>({ open: false, orderId: null, x: 0, y: 0 });
-    const [showMoveSubmenu, setShowMoveSubmenu] = useState(false);
     const [createOrderModal, setCreateOrderModal] = useState(false);
     const [newOrder, setNewOrder] = useState<NewOrder>({
         title: '',
@@ -76,66 +76,65 @@ export default function Overview() {
     });
     const [draggedOrder, setDraggedOrder] = useState<number | null>(null);
     const navigate = useNavigate();
-    const optionsRef = useRef<HTMLDivElement>(null);
-    const submenuRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<TieredMenuType | null>(null);
+    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
 
-    // Close options panel when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (optionsRef.current && !optionsRef.current.contains(event.target as Node)) {
-                setOptionsPanel({ open: false, orderId: null, x: 0, y: 0 });
-                setShowMoveSubmenu(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const calculateOptionsPosition = (e: React.MouseEvent) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        const panelWidth = 200;
-        const panelHeight = 150;
-
-        // Start with position to the right of the button
-        let x = rect.right + 10;
-        let y = rect.top;
-
-        // Check if panel would go off the right edge
-        if (x + panelWidth > viewportWidth) {
-            x = rect.left - panelWidth - 10; // Position to the left
+    // Menu items for the options menu
+    const orderMenuItems = [
+        {
+            label: 'Open',
+            icon: 'pi pi-external-link',
+            command: () => { if (selectedOrderId) handleCardClick(selectedOrderId); }
+        },
+        {
+            label: 'Edit Details',
+            icon: 'pi pi-pencil',
+            command: () => { if (selectedOrderId) handleCardClick(selectedOrderId); }
+        },
+        {
+            label: 'Move to Column',
+            icon: 'pi pi-arrow-right', // or use ArrowRight from lucide-react
+            // 📢 THIS creates the true submenu panel to the right
+            items: [
+                {
+                    label: 'Drop by customer',
+                    icon: 'pi pi-user',
+                    command: () => handleMoveToColumn('drop_by_customer')
+                },
+                {
+                    label: 'Received',
+                    icon: 'pi pi-inbox',
+                    command: () => handleMoveToColumn('received')
+                },
+                {
+                    label: 'Work in Progress',
+                    icon: 'pi pi-cog',
+                    command: () => handleMoveToColumn('work_in_progress')
+                },
+                {
+                    label: 'Waiting for Customer Reply',
+                    icon: 'pi pi-envelope',
+                    command: () => handleMoveToColumn('waiting_customer_reply')
+                },
+                {
+                    label: 'Waiting for Parts',
+                    icon: 'pi pi-truck',
+                    command: () => handleMoveToColumn('waiting_for_parts')
+                },
+                {
+                    label: 'Pickup by Customer',
+                    icon: 'pi pi-check',
+                    command: () => handleMoveToColumn('pickup_by_customer')
+                },
+            ]
         }
+    ];
 
-        // Check if panel would go off the bottom edge
-        if (y + panelHeight > viewportHeight) {
-            y = viewportHeight - panelHeight - 10;
-        }
-
-        // Ensure panel doesn't go off the top edge
-        if (y < 10) {
-            y = 10;
-        }
-
-        // Ensure panel doesn't go off the left edge
-        if (x < 10) {
-            x = 10;
-        }
-
-        return { x, y };
-    };
 
     const handleOptionsClick = (e: React.MouseEvent, orderId: number) => {
         e.stopPropagation();
-        const position = calculateOptionsPosition(e);
-        setOptionsPanel({
-            open: true,
-            orderId,
-            x: position.x,
-            y: position.y
-        });
-        setShowMoveSubmenu(false);
+        setSelectedOrderId(orderId);
+        menuRef.current?.toggle(e);
     };
 
     const handleCardClick = (orderId: number) => {
@@ -143,14 +142,12 @@ export default function Overview() {
     };
 
     const handleMoveToColumn = (newStatus: string) => {
-        if (optionsPanel.orderId) {
+        if (selectedOrderId) {
             setOrders(prev => prev.map(order =>
-                order.id === optionsPanel.orderId
+                order.id === selectedOrderId
                     ? { ...order, status: newStatus }
                     : order
             ));
-            setOptionsPanel({ open: false, orderId: null, x: 0, y: 0 });
-            setShowMoveSubmenu(false);
         }
     };
 
@@ -200,6 +197,23 @@ export default function Overview() {
             });
         }
     };
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            const menu = menuRef.current;
+            if (
+                menu &&
+                typeof menu.getElement === 'function'
+            ) {
+                const menuElement = menu.getElement();
+                if (menuElement && !menuElement.contains(event.target as Node)) {
+                    (menuRef.current as any)?.hide?.(event as any);
+                }
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 p-6">
@@ -352,72 +366,7 @@ export default function Overview() {
                 })}
             </div>
 
-            {/* Options Panel */}
-            {optionsPanel.open && (
-                <div
-                    ref={optionsRef}
-                    className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-2 min-w-[200px]"
-                    style={{
-                        left: optionsPanel.x,
-                        top: optionsPanel.y
-                    }}
-                >
-                    <button
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2 text-sm"
-                        onClick={() => {
-                            if (optionsPanel.orderId) {
-                                handleCardClick(optionsPanel.orderId);
-                                setOptionsPanel({ open: false, orderId: null, x: 0, y: 0 });
-                            }
-                        }}
-                    >
-                        <ArrowRight className="w-4 h-4" />
-                        Open
-                    </button>
-                    <button
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2 text-sm"
-                        onClick={() => {
-                            if (optionsPanel.orderId) {
-                                handleCardClick(optionsPanel.orderId);
-                                setOptionsPanel({ open: false, orderId: null, x: 0, y: 0 });
-                            }
-                        }}
-                    >
-                        <Edit className="w-4 h-4" />
-                        Edit Details
-                    </button>
-                    <div className="relative">
-                        <button
-                            className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between text-sm"
-                            onMouseEnter={() => setShowMoveSubmenu(true)}
-                        >
-                            <span className="flex items-center gap-2">
-                                <ArrowRight className="w-4 h-4" />
-                                Move to Column
-                            </span>
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                        {showMoveSubmenu && (
-                            <div
-                                ref={submenuRef}
-                                className="absolute left-full top-0 ml-1 bg-white rounded-lg shadow-lg border border-gray-200 py-2 min-w-[150px]"
-                                onMouseEnter={() => setShowMoveSubmenu(true)}
-                                onMouseLeave={() => setShowMoveSubmenu(false)}
-                            >
-                                {statuses.map(status => (
-                                    <button
-                                        key={status.key}
-                                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
-                                        onClick={() => handleMoveToColumn(status.key)}
-                                    >
-                                        {status.label}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+
 
             {/* Create Order Modal */}
             <Dialog
@@ -471,7 +420,7 @@ export default function Overview() {
                             onChange={(date) => setNewOrder(prev => ({ ...prev, pickupDate: date }))}
                             className="w-full"
                             placeholder="Select date and time"
-                        />
+                            getPopupContainer={(triggerNode) => triggerNode.parentElement || document.body} />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -498,6 +447,9 @@ export default function Overview() {
                     </div>
                 </div>
             </Dialog>
+
+            {/* Order Options Menu */}
+            <TieredMenu model={orderMenuItems} popup ref={menuRef} />
         </div>
     );
 } 

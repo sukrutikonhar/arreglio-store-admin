@@ -159,7 +159,7 @@
   }
 
   .main-content-wrapper {
-    max-width: 1504px;
+    /* max-width: 1504px; */
     /* min-width: 360px; */
     width: 100%;
     margin-left: auto;
@@ -182,9 +182,13 @@
     padding-left: 0 !important;
   }
 
+  .ant-picker-dropdown {
+    z-index: 2000 !important;
+  }
+
   @media screen and (min-width: 1960px) {
     .main-content-wrapper {
-      width: 1504px;
+      /* width: 1504px; */
     }
   }
 }

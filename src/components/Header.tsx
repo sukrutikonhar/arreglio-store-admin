@@ -1,18 +1,47 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, NavLink } from "react-router-dom";
-import { Menu, Search, Home, BarChart2, Wrench, ShoppingBag, X } from "lucide-react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Menu, Search, Home, BarChart2, Wrench, ShoppingBag, X, Bell, User, LogOut, Settings } from "lucide-react";
 import { Cog8ToothIcon } from "@heroicons/react/24/solid";
-import NotificationPanel from "./NotficationPanel";
-import UserPanel from "./UserPanel";
+import { Button } from "primereact/button";
+import { Badge } from "primereact/badge";
+import { Dialog } from "primereact/dialog";
+import { Toast } from "primereact/toast";
+import { InputText } from "primereact/inputtext";
+import NotificationPanel from "./NotificationPanel";
 import LanguagePanel from "./LanguagePanel";
 
 type ActiveIconType = "notifications" | "language" | "user" | "settings" | "menu" | null;
+
+interface User {
+    id: string;
+    name: string;
+    email: string;
+    avatar: string;
+    role: string;
+    lastLogin: Date;
+}
+
+const mockUser: User = {
+    id: "1",
+    name: "John Smith",
+    email: "john.smith@arreglio.com",
+    avatar: "/images/avatar/user1.jpg",
+    role: "Administrator",
+    lastLogin: new Date()
+};
 
 export default function Header() {
     const [isNavOpen, setIsNavOpen] = useState(false);
     const [activeIcon, setActiveIcon] = useState<ActiveIconType>(null);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [showNotificationPanel, setShowNotificationPanel] = useState(false);
+    const [showUserPanel, setShowUserPanel] = useState(false);
+    const [showUserSettings, setShowUserSettings] = useState(false);
+    const [user, setUser] = useState<User>(mockUser);
+    const [toast, setToast] = useState<any>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const userPanelRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     const handleMenuClick = () => {
         setIsNavOpen(prev => !prev);
@@ -21,6 +50,53 @@ export default function Header() {
     const handleSearchToggle = () => {
         setIsSearchOpen((prev) => !prev);
     };
+
+    const handleNotificationClick = () => {
+        setShowNotificationPanel(true);
+        setActiveIcon(null);
+    };
+
+    const handleUserClick = () => {
+        setShowUserPanel(!showUserPanel);
+        setActiveIcon(null);
+    };
+
+    const handleLogout = () => {
+        setToast({
+            severity: 'success',
+            summary: 'Logged Out',
+            detail: 'You have been successfully logged out.',
+            life: 3000
+        });
+
+        // Simulate logout process
+        setTimeout(() => {
+            navigate('/login');
+        }, 1000);
+    };
+
+    const handleProfileClick = () => {
+        setShowUserPanel(false);
+        navigate('/profile');
+    };
+
+    const handleSettingsClick = () => {
+        setShowUserPanel(false);
+        setShowUserSettings(true);
+    };
+
+    // Close user panel when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (userPanelRef.current && !userPanelRef.current.contains(event.target as Node)) {
+                setShowUserPanel(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         if (isSearchOpen && searchInputRef.current) {
@@ -63,7 +139,22 @@ export default function Header() {
                 {/* Right section: Always display language, notifications, settings, and user icons */}
                 <div className="flex items-center space-x-2">
                     <LanguagePanel activeIcon={activeIcon} setActiveIcon={setActiveIcon} />
-                    <NotificationPanel activeIcon={activeIcon} setActiveIcon={setActiveIcon} />
+
+                    {/* Notification Button */}
+                    <div className="relative">
+                        <button
+                            onClick={handleNotificationClick}
+                            className="header-icon relative"
+                        >
+                            <Bell className="w-5 h-5" />
+                            <Badge
+                                value="3"
+                                severity="danger"
+                                className="absolute -top-1 -right-1"
+                            />
+                        </button>
+                    </div>
+
                     <NavLink
                         to="/settings"
                         className={({ isActive }) =>
@@ -72,7 +163,68 @@ export default function Header() {
                     >
                         <Cog8ToothIcon className="w-6 h-6" />
                     </NavLink>
-                    <UserPanel activeIcon={activeIcon} setActiveIcon={setActiveIcon} />
+
+                    {/* User Panel */}
+                    <div className="relative" ref={userPanelRef}>
+                        <button
+                            onClick={handleUserClick}
+                            className="header-icon"
+                        >
+                            <img
+                                src={user.avatar}
+                                alt="User Avatar"
+                                className="w-8 h-8 rounded-full"
+                            />
+                        </button>
+
+                        {/* User Dropdown Panel */}
+                        {showUserPanel && (
+                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border z-50">
+                                {/* User Info */}
+                                <div className="p-4 border-b border-gray-200">
+                                    <div className="flex items-center space-x-3">
+                                        <img
+                                            src={user.avatar}
+                                            alt="User Avatar"
+                                            className="w-12 h-12 rounded-full"
+                                        />
+                                        <div>
+                                            <p className="font-semibold text-gray-900">{user.name}</p>
+                                            <p className="text-sm text-gray-500">{user.email}</p>
+                                            <p className="text-xs text-gray-400">{user.role}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Menu Options */}
+                                <div className="p-2">
+                                    <button
+                                        onClick={handleProfileClick}
+                                        className="w-full flex items-center p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                                    >
+                                        <User className="w-5 h-5 mr-3 text-gray-500" />
+                                        <span className="text-gray-700">Profile</span>
+                                    </button>
+
+                                    <button
+                                        onClick={handleSettingsClick}
+                                        className="w-full flex items-center p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                                    >
+                                        <Settings className="w-5 h-5 mr-3 text-gray-500" />
+                                        <span className="text-gray-700">Settings</span>
+                                    </button>
+
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full flex items-center p-3 text-left hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                        <LogOut className="w-5 h-5 mr-3 text-red-500" />
+                                        <span className="text-red-600">Logout</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -166,6 +318,99 @@ export default function Header() {
                     </div>
                 </div>
             )}
+
+            {/* Notification Panel Dialog */}
+            <NotificationPanel
+                isOpen={showNotificationPanel}
+                onClose={() => setShowNotificationPanel(false)}
+            />
+
+            {/* User Settings Dialog */}
+            <Dialog
+                header="User Settings"
+                visible={showUserSettings}
+                onHide={() => setShowUserSettings(false)}
+                style={{ width: '600px' }}
+                modal
+            >
+                <div className="space-y-6">
+                    {/* Profile Section */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                <InputText
+                                    value={user.name}
+                                    onChange={(e) => setUser({ ...user, name: e.target.value })}
+                                    className="w-full"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                <InputText
+                                    value={user.email}
+                                    onChange={(e) => setUser({ ...user, email: e.target.value })}
+                                    className="w-full"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Preferences Section */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Preferences</h3>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-700">Email Notifications</span>
+                                <Button
+                                    icon="pi pi-check"
+                                    className="p-button-sm"
+                                    severity="success"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-700">Push Notifications</span>
+                                <Button
+                                    icon="pi pi-check"
+                                    className="p-button-sm"
+                                    severity="success"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-700">Dark Mode</span>
+                                <Button
+                                    icon="pi pi-times"
+                                    className="p-button-sm"
+                                    severity="secondary"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            label="Cancel"
+                            className="p-button-text"
+                            onClick={() => setShowUserSettings(false)}
+                        />
+                        <Button
+                            label="Save Changes"
+                            onClick={() => {
+                                setShowUserSettings(false);
+                                setToast({
+                                    severity: 'success',
+                                    summary: 'Settings Saved',
+                                    detail: 'Your settings have been updated successfully.',
+                                    life: 3000
+                                });
+                            }}
+                        />
+                    </div>
+                </div>
+            </Dialog>
+
+            <Toast ref={toast} />
         </header>
     );
 }
