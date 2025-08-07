@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Menu, Search, Home, BarChart2, Wrench, ShoppingBag, X, Bell, User, LogOut, Settings } from "lucide-react";
+import { Menu, Search, Home, BarChart2, Wrench, ShoppingBag, X, User, LogOut, Settings } from "lucide-react";
 import { Cog8ToothIcon } from "@heroicons/react/24/solid";
 import { Button } from "primereact/button";
-import { Badge } from "primereact/badge";
+
 import { Dialog } from "primereact/dialog";
 import { Toast } from "primereact/toast";
 import { InputText } from "primereact/inputtext";
-import NotificationPanel from "./NotificationPanel";
+import NotificationPanel from "./NotficationPanel";
 import LanguagePanel from "./LanguagePanel";
 
 type ActiveIconType = "notifications" | "language" | "user" | "settings" | "menu" | null;
@@ -34,7 +34,7 @@ export default function Header() {
     const [isNavOpen, setIsNavOpen] = useState(false);
     const [activeIcon, setActiveIcon] = useState<ActiveIconType>(null);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [showNotificationPanel, setShowNotificationPanel] = useState(false);
+
     const [showUserPanel, setShowUserPanel] = useState(false);
     const [showUserSettings, setShowUserSettings] = useState(false);
     const [user, setUser] = useState<User>(mockUser);
@@ -51,10 +51,7 @@ export default function Header() {
         setIsSearchOpen((prev) => !prev);
     };
 
-    const handleNotificationClick = () => {
-        setShowNotificationPanel(true);
-        setActiveIcon(null);
-    };
+
 
     const handleUserClick = () => {
         setShowUserPanel(!showUserPanel);
@@ -140,20 +137,8 @@ export default function Header() {
                 <div className="flex items-center space-x-2">
                     <LanguagePanel activeIcon={activeIcon} setActiveIcon={setActiveIcon} />
 
-                    {/* Notification Button */}
-                    <div className="relative">
-                        <button
-                            onClick={handleNotificationClick}
-                            className="header-icon relative"
-                        >
-                            <Bell className="w-5 h-5" />
-                            <Badge
-                                value="3"
-                                severity="danger"
-                                className="absolute -top-1 -right-1"
-                            />
-                        </button>
-                    </div>
+                    {/* Notification Panel */}
+                    <NotificationPanel activeIcon={activeIcon} setActiveIcon={setActiveIcon} />
 
                     <NavLink
                         to="/settings"
@@ -319,11 +304,7 @@ export default function Header() {
                 </div>
             )}
 
-            {/* Notification Panel Dialog */}
-            <NotificationPanel
-                isOpen={showNotificationPanel}
-                onClose={() => setShowNotificationPanel(false)}
-            />
+
 
             {/* User Settings Dialog */}
             <Dialog

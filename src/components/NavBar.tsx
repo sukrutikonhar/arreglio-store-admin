@@ -1,5 +1,5 @@
 // src/components/NavBar.tsx
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 export default function NavBar() {
     return (
@@ -12,24 +12,48 @@ export default function NavBar() {
                 {/* Main Nav Links */}
                 <ul className="flex space-x-4">
                     <li>
-                        <Link to="/dashboard" className="hover:text-gray-300">
+                        <NavLink
+                            to="/dashboard"
+                            className={({ isActive }) =>
+                                `hover:text-gray-300 transition-colors duration-200 ${isActive ? "text-blue-400 font-semibold border-b-2 border-blue-400 pb-1" : ""
+                                }`
+                            }
+                        >
                             Dashboard
-                        </Link>
+                        </NavLink>
                     </li>
                     <li>
-                        <Link to="/overview" className="hover:text-gray-300">
+                        <NavLink
+                            to="/overview"
+                            className={({ isActive }) =>
+                                `hover:text-gray-300 transition-colors duration-200 ${isActive ? "text-blue-400 font-semibold border-b-2 border-blue-400 pb-1" : ""
+                                }`
+                            }
+                        >
                             Overview
-                        </Link>
+                        </NavLink>
                     </li>
                     <li>
-                        <Link to="/service" className="hover:text-gray-300">
+                        <NavLink
+                            to="/service-team"
+                            className={({ isActive }) =>
+                                `hover:text-gray-300 transition-colors duration-200 ${isActive ? "text-blue-400 font-semibold border-b-2 border-blue-400 pb-1" : ""
+                                }`
+                            }
+                        >
                             Service
-                        </Link>
+                        </NavLink>
                     </li>
                     <li>
-                        <Link to="/marketplace" className="hover:text-gray-300">
-                            Marketplace
-                        </Link>
+                        <NavLink
+                            to="/customers"
+                            className={({ isActive }) =>
+                                `hover:text-gray-300 transition-colors duration-200 ${isActive ? "text-blue-400 font-semibold border-b-2 border-blue-400 pb-1" : ""
+                                }`
+                            }
+                        >
+                            Customers
+                        </NavLink>
                     </li>
                 </ul>
             </div>
