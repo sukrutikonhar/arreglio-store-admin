@@ -539,40 +539,7 @@ export default function GeneralSettings() {
         </div>
     );
 
-    // Filter functions
-    const onServiceFilterChange = (field: string, value: any) => {
-        setServiceFilters((prev: any) => ({
-            ...prev,
-            [field]: { ...prev[field], value }
-        }));
-    };
 
-    const onDeliverySlotFilterChange = (field: string, value: any) => {
-        setDeliverySlotFilters((prev: any) => ({
-            ...prev,
-            [field]: { ...prev[field], value }
-        }));
-    };
-
-    // Filter the data based on current filters
-    const filteredServices = services.filter(service => {
-        const categoryMatch = !serviceFilters.category.value || service.category === serviceFilters.category.value;
-        const serviceNameMatch = !serviceFilters.serviceName.value ||
-            service.serviceName.toLowerCase().includes(serviceFilters.serviceName.value.toLowerCase());
-        const descriptionMatch = !serviceFilters.serviceDescription.value ||
-            service.serviceDescription.toLowerCase().includes(serviceFilters.serviceDescription.value.toLowerCase());
-
-        return categoryMatch && serviceNameMatch && descriptionMatch;
-    });
-
-    const filteredDeliverySlots = deliverySlots.filter(slot => {
-        const regionMatch = !deliverySlotFilters.region.value || slot.region === deliverySlotFilters.region.value;
-        const intervalMatch = !deliverySlotFilters.interval.value ||
-            slot.interval.toLowerCase().includes(deliverySlotFilters.interval.value.toLowerCase());
-        const statusMatch = !deliverySlotFilters.status.value || slot.status === deliverySlotFilters.status.value;
-
-        return regionMatch && intervalMatch && statusMatch;
-    });
 
     const generateTimeOptions = () => {
         const options = [];
