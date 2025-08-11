@@ -9,11 +9,13 @@ import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
+import { FilterMatchMode } from 'primereact/api';
 
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { Tooltip } from 'primereact/tooltip';
 import { Toast } from 'primereact/toast';
 import { useNavigate } from 'react-router-dom';
+import { InputTextarea } from 'primereact/inputtextarea';
 
 interface Service {
     id: number;
@@ -114,9 +116,20 @@ export default function GeneralSettings() {
     const [deleteOpeningHourDialog, setDeleteOpeningHourDialog] = useState(false);
     const [deleteDeliverySlotDialog, setDeleteDeliverySlotDialog] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<any>(null);
-    const [selectedCategory, setSelectedCategory] = useState('');
-    const [selectedDeliveryRegion, setSelectedDeliveryRegion] = useState('');
-    const [selectedDeliveryStatus, setSelectedDeliveryStatus] = useState('');
+
+    // Services filters
+    const [serviceFilters, setServiceFilters] = useState<any>({
+        category: { value: null, matchMode: FilterMatchMode.EQUALS },
+        serviceName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        serviceDescription: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    });
+
+    // Delivery slots filters
+    const [deliverySlotFilters, setDeliverySlotFilters] = useState<any>({
+        region: { value: null, matchMode: FilterMatchMode.EQUALS },
+        interval: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        status: { value: null, matchMode: FilterMatchMode.EQUALS }
+    });
 
     const [newOpeningHours, setNewOpeningHours] = useState({
         day: '',
@@ -526,9 +539,40 @@ export default function GeneralSettings() {
         </div>
     );
 
-    // Use the original data for PrimeReact's built-in filtering
-    const filteredServices = services;
-    const filteredDeliverySlots = deliverySlots;
+    // Filter functions
+    const onServiceFilterChange = (field: string, value: any) => {
+        setServiceFilters((prev: any) => ({
+            ...prev,
+            [field]: { ...prev[field], value }
+        }));
+    };
+
+    const onDeliverySlotFilterChange = (field: string, value: any) => {
+        setDeliverySlotFilters((prev: any) => ({
+            ...prev,
+            [field]: { ...prev[field], value }
+        }));
+    };
+
+    // Filter the data based on current filters
+    const filteredServices = services.filter(service => {
+        const categoryMatch = !serviceFilters.category.value || service.category === serviceFilters.category.value;
+        const serviceNameMatch = !serviceFilters.serviceName.value ||
+            service.serviceName.toLowerCase().includes(serviceFilters.serviceName.value.toLowerCase());
+        const descriptionMatch = !serviceFilters.serviceDescription.value ||
+            service.serviceDescription.toLowerCase().includes(serviceFilters.serviceDescription.value.toLowerCase());
+
+        return categoryMatch && serviceNameMatch && descriptionMatch;
+    });
+
+    const filteredDeliverySlots = deliverySlots.filter(slot => {
+        const regionMatch = !deliverySlotFilters.region.value || slot.region === deliverySlotFilters.region.value;
+        const intervalMatch = !deliverySlotFilters.interval.value ||
+            slot.interval.toLowerCase().includes(deliverySlotFilters.interval.value.toLowerCase());
+        const statusMatch = !deliverySlotFilters.status.value || slot.status === deliverySlotFilters.status.value;
+
+        return regionMatch && intervalMatch && statusMatch;
+    });
 
     const generateTimeOptions = () => {
         const options = [];
@@ -553,8 +597,7 @@ export default function GeneralSettings() {
                     </div>
                     <Button
                         label="Create Service"
-                        icon="pi pi-plus"
-                        className="p-button-primary"
+                        className="p-button-primary p-button-sm !px-4 !py-2"
                         onClick={() => {
                             setEditingService(null);
                             setNewService({
@@ -572,52 +615,65 @@ export default function GeneralSettings() {
                 <Tooltip target="#services-info" content="Manage your service offerings, including pricing, VAT rates, and delivery costs." />
 
                 <DataTable
-                    value={filteredServices}
-                    className="p-datatable-sm mb-4"
+                    value={services}
                     paginator
                     rows={5}
                     rowsPerPageOptions={[5, 10, 20]}
                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} services"
-                    emptyMessage="No services found."
+                    filters={serviceFilters}
+                    onFilter={(e) => setServiceFilters(e.filters)}
+                    filterDisplay="row"
                 >
                     <Column
                         field="category"
                         header="Category"
                         sortable
                         filter
-                        filterPlaceholder="Filter by category"
-                        filterMatchMode="equals"
-                        filterElement={
+                        filterElement={(options) => (
                             <Dropdown
-                                value={selectedCategory}
-                                onChange={(e) => setSelectedCategory(e.value)}
+                                value={options.value}
+                                onChange={(e) => options.filterApplyCallback(e.value)}
                                 options={categoryOptions}
-                                className="w-full"
-                                placeholder="Select category"
+                                placeholder="Select"
+                                className="p-column-filter"
+                                showClear
                             />
-                        }
+                        )}
                     />
                     <Column
                         field="serviceName"
                         header="Service (sv)"
                         sortable
                         filter
-                        filterPlaceholder="Search services..."
-                        filterMatchMode="contains"
+                        filterElement={(options) => (
+                            <InputText
+                                type="text"
+                                value={options.value || ''}
+                                onChange={(e) => options.filterApplyCallback(e.target.value)}
+                                placeholder="Filter"
+                                className="p-column-filter"
+                            />
+                        )}
                     />
                     <Column
                         field="serviceDescription"
                         header="Service Description (sv)"
                         sortable
                         filter
-                        filterPlaceholder="Search descriptions..."
-                        filterMatchMode="contains"
+                        filterElement={(options) => (
+                            <InputText
+                                type="text"
+                                value={options.value || ''}
+                                onChange={(e) => options.filterApplyCallback(e.target.value)}
+                                placeholder="Filter"
+                                className="p-column-filter"
+                            />
+                        )}
                     />
                     <Column field="price" header="Price (kr)" body={priceTemplate} sortable />
                     <Column field="vatRate" header="Vat Rate %" body={vatTemplate} sortable />
                     <Column field="deliveryPrice" header="Delivery price (kr)" body={deliveryPriceTemplate} sortable />
-                    <Column body={serviceDeleteTemplate} header="Actions" style={{ width: '100px' }} />
+                    <Column header="Actions" body={serviceDeleteTemplate} />
                 </DataTable>
             </div>
 
@@ -683,7 +739,7 @@ export default function GeneralSettings() {
 
                     <div className="field">
                         <label htmlFor="serviceDescription" className="block mb-2">Service Description</label>
-                        <textarea
+                        <InputTextarea
                             id="serviceDescription"
                             value={editingService ? editingService.serviceDescription : newService.serviceDescription}
                             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -811,8 +867,7 @@ export default function GeneralSettings() {
                     </div>
                     <Button
                         label="Add Open Hours"
-                        icon="pi pi-plus"
-                        className="p-button-primary"
+                        className="p-button-primary p-button-sm !px-4 !py-2"
                         onClick={() => setShowCreateDialog(true)}
                     />
                 </div>
@@ -824,7 +879,6 @@ export default function GeneralSettings() {
                     rows={5}
                     rowsPerPageOptions={[5, 10, 20]}
                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} opening hours"
                 >
                     <Column field="day" header="Day" sortable />
                     <Column field="opens" header="Opens" sortable />
@@ -1045,47 +1099,52 @@ export default function GeneralSettings() {
                     </div>
                     <Button
                         label="Add Delivery Slot"
-                        icon="pi pi-plus"
-                        className="p-button-primary"
+                        className="p-button-primary p-button-sm !px-4 !py-2"
                         onClick={() => setShowDeliverySlotDialog(true)}
                     />
                 </div>
                 <Tooltip target="#delivery-hours-info" content="Specify the time slots during which deliveries are available. Ensure they align with your operational capabilities." />
 
                 <DataTable
-                    value={filteredDeliverySlots}
-                    className="p-datatable-sm"
+                    value={deliverySlots}
                     paginator
                     rows={5}
                     rowsPerPageOptions={[5, 10, 20]}
                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} delivery slots"
-                    emptyMessage="No delivery slots found."
+                    filters={deliverySlotFilters}
+                    onFilter={(e) => setDeliverySlotFilters(e.filters)}
+                    filterDisplay="row"
                 >
                     <Column
                         field="region"
                         header="Regions"
                         sortable
                         filter
-                        filterPlaceholder="Filter by region"
-                        filterMatchMode="equals"
-                        filterElement={
+                        filterElement={(options) => (
                             <Dropdown
-                                value={selectedDeliveryRegion}
-                                onChange={(e) => setSelectedDeliveryRegion(e.value)}
+                                value={options.value}
+                                onChange={(e) => options.filterApplyCallback(e.value)}
                                 options={regionOptions}
-                                className="w-full"
-                                placeholder="Select region"
+                                placeholder="Select"
+                                className="p-column-filter"
+                                showClear
                             />
-                        }
+                        )}
                     />
                     <Column
                         field="interval"
                         header="Delivery slot interval"
                         sortable
                         filter
-                        filterPlaceholder="Search intervals..."
-                        filterMatchMode="contains"
+                        filterElement={(options) => (
+                            <InputText
+                                type="text"
+                                value={options.value || ''}
+                                onChange={(e) => options.filterApplyCallback(e.target.value)}
+                                placeholder="Filter"
+                                className="p-column-filter"
+                            />
+                        )}
                     />
                     <Column
                         field="status"
@@ -1093,22 +1152,21 @@ export default function GeneralSettings() {
                         body={statusTemplate}
                         sortable
                         filter
-                        filterPlaceholder="Filter by status"
-                        filterMatchMode="equals"
-                        filterElement={
+                        filterElement={(options) => (
                             <Dropdown
-                                value={selectedDeliveryStatus}
-                                onChange={(e) => setSelectedDeliveryStatus(e.value)}
+                                value={options.value}
+                                onChange={(e) => options.filterApplyCallback(e.value)}
                                 options={deliveryStatusOptions}
-                                className="w-full"
-                                placeholder="Select status"
+                                placeholder="Select"
+                                className="p-column-filter"
+                                showClear
                             />
-                        }
+                        )}
                     />
                     <Column field="capacity" header="Max delivery capacity" sortable />
-                    <Column field="marketplace" header="Offer marketplace" body={rowData => booleanTemplate(rowData.marketplace)} sortable />
-                    <Column field="subscription" header="Offer Subscription" body={rowData => booleanTemplate(rowData.subscription)} sortable />
-                    <Column body={editTemplate} header="Actions" style={{ width: '100px' }} />
+                    <Column field="marketplace" header="Marketplace" body={(rowData) => booleanTemplate(rowData.marketplace)} sortable />
+                    <Column field="subscription" header="Subscription" body={(rowData) => booleanTemplate(rowData.subscription)} sortable />
+                    <Column header="Actions" body={editTemplate} />
                 </DataTable>
 
                 {/* Add Delivery Slot Dialog */}
