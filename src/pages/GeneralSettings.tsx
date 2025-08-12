@@ -10,7 +10,10 @@ import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { FilterMatchMode } from 'primereact/api';
-
+import {
+    DataTableFilterMeta,
+    DataTableFilterEvent
+} from 'primereact/datatable';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { Tooltip } from 'primereact/tooltip';
 import { Toast } from 'primereact/toast';
@@ -25,6 +28,11 @@ interface Service {
     price: number;
     vatRate: number;
     deliveryPrice: number;
+}
+
+interface ServiceCategory {
+    id: number;
+    name: string;
 }
 
 export default function GeneralSettings() {
@@ -92,6 +100,24 @@ export default function GeneralSettings() {
         }
     ]);
 
+    // Categories state
+    const [categories, setCategories] = useState<ServiceCategory[]>([
+        { id: 1, name: 'Electric Bike' },
+        { id: 2, name: 'Cargo Bike' },
+        { id: 3, name: 'Regular Bike' },
+        { id: 4, name: 'Scooter' }
+    ]);
+    const [showCategoriesManager, setShowCategoriesManager] = useState(false);
+    const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<ServiceCategory | null>(null);
+    const [newCategory, setNewCategory] = useState<{ name: string }>({ name: '' });
+    const [categoryErrors, setCategoryErrors] = useState<{ name: boolean }>({ name: false });
+    const isCategoryExists = (name: string) =>
+        categories.some(c => c.name.toLowerCase() === name.toLowerCase());
+
+    const isServiceExists = (name: string) =>
+        services.some(s => s.serviceName.toLowerCase() === name.toLowerCase());
+
     const [showServiceDialog, setShowServiceDialog] = useState(false);
     const [editingService, setEditingService] = useState<Service | null>(null);
     const [newService, setNewService] = useState<Omit<Service, 'id'>>({
@@ -116,6 +142,10 @@ export default function GeneralSettings() {
     const [deleteOpeningHourDialog, setDeleteOpeningHourDialog] = useState(false);
     const [deleteDeliverySlotDialog, setDeleteDeliverySlotDialog] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<any>(null);
+
+    const [categoryFilters, setCategoryFilters] = useState<DataTableFilterMeta>({
+        name: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    });
 
     // Services filters
     const [serviceFilters, setServiceFilters] = useState<any>({
@@ -149,12 +179,8 @@ export default function GeneralSettings() {
         'Thursday', 'Friday', 'Saturday', 'Sunday'
     ];
 
-    const categoryOptions = [
-        { label: 'Electric Bike', value: 'Electric Bike' },
-        { label: 'Cargo Bike', value: 'Cargo Bike' },
-        { label: 'Regular Bike', value: 'Regular Bike' },
-        { label: 'Scooter', value: 'Scooter' }
-    ];
+    // Derive category dropdown/filter options from categories state
+    const categoryOptions = categories.map((c) => ({ label: c.name, value: c.name }));
 
     const statusOptions = [
         { label: 'Open', value: 'Open' },
@@ -187,12 +213,18 @@ export default function GeneralSettings() {
     const availableDays = daysOfWeek.filter(
         (day) => !openingHours.some((item) => item.day === day)
     );
+    const capitalizeWords = (str: string) =>
+        str.toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
 
     // Service functions
     const handleCreateService = () => {
         const errors = {
             category: !newService.category.trim(),
-            serviceName: !newService.serviceName.trim(),
+            serviceName: !newService.serviceName.trim() ||
+                isServiceExists(newService.serviceName),
             serviceDescription: !newService.serviceDescription.trim(),
             price: newService.price < 0,
             vatRate: newService.vatRate < 0 || newService.vatRate > 100,
@@ -268,6 +300,74 @@ export default function GeneralSettings() {
             severity: 'success',
             summary: 'Success',
             detail: 'Service has been updated successfully.',
+            life: 3000
+        });
+    };
+
+    // Category functions
+    const handleCreateCategory = () => {
+        const name = newCategory.name.trim();
+        const errors = {
+            name: !name || isCategoryExists(name)
+        };
+
+        setCategoryErrors(errors);
+        if (Object.values(errors).some(Boolean)) return;
+
+        const newCategoryWithId: ServiceCategory = {
+            id: Math.max(...categories.map(c => c.id), 0) + 1,
+            name: capitalizeWords(name)
+        };
+        setCategories([...categories, newCategoryWithId]);
+        setShowCategoryDialog(false);
+        setNewCategory({ name: '' });
+    };
+
+    const handleUpdateCategory = () => {
+        if (!editingCategory) return;
+        const errors = { name: !editingCategory.name.trim() };
+        setCategoryErrors(errors);
+        if (Object.values(errors).some(Boolean)) return;
+
+        const previous = categories.find((c) => c.id === editingCategory.id);
+        const updatedName = editingCategory.name.trim();
+        setCategories(categories.map((c) => (c.id === editingCategory.id ? { ...editingCategory, name: updatedName } : c)));
+
+        if (previous && previous.name !== updatedName) {
+            setServices((prev) => prev.map((s) => (s.category === previous.name ? { ...s, category: updatedName } : s)));
+        }
+
+        setShowCategoryDialog(false);
+        setEditingCategory(null);
+    };
+
+    const [deleteCategoryDialog, setDeleteCategoryDialog] = useState(false);
+    const handleDeleteCategory = (category: ServiceCategory) => {
+        setItemToDelete(category);
+        setDeleteCategoryDialog(true);
+    };
+
+    const confirmDeleteCategory = () => {
+        const category = itemToDelete as ServiceCategory;
+        if (!category) return;
+
+        // Remove services that belong to this category
+        setServices(prevServices =>
+            prevServices.filter(service => service.category !== category.name)
+        );
+
+        // Remove the category itself
+        setCategories(prevCategories =>
+            prevCategories.filter(c => c.id !== category.id)
+        );
+
+        setDeleteCategoryDialog(false);
+        setItemToDelete(null);
+
+        setToast({
+            severity: 'success',
+            summary: 'Success',
+            detail: `Category "${category.name}" and its services have been deleted.`,
             life: 3000
         });
     };
@@ -553,6 +653,78 @@ export default function GeneralSettings() {
 
     return (
         <div className="">
+            {/* Categories Manager (opened on demand) */}
+            <Dialog
+                header="Manage Categories"
+                visible={showCategoriesManager}
+                style={{ width: '700px' }}
+                onHide={() => setShowCategoriesManager(false)}
+            >
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <h6 className="text-sm font-medium text-gray-700">Service Categories</h6>
+                        <span className="cursor-pointer">
+                            <Info className="h-4 w-4 text-gray-500" />
+                        </span>
+                    </div>
+                    <Button
+                        label="Create Category"
+                        className="p-button-primary p-button-sm !px-4 !py-2"
+                        onClick={() => {
+                            setEditingCategory(null);
+                            setNewCategory({ name: '' });
+                            setCategoryErrors({ name: false });
+                            setShowCategoryDialog(true);
+                        }}
+                    />
+                </div>
+                <DataTable
+                    value={categories}
+                    paginator
+                    rows={7}
+                    rowsPerPageOptions={[7, 14, 21]}
+                    filters={categoryFilters}
+                    onFilter={(e: DataTableFilterEvent) => setCategoryFilters(e.filters)}
+                    filterDisplay="row"
+                >
+                    <Column
+                        field="name"
+                        header="Category Name"
+                        sortable
+                        body={(rowData) => capitalizeWords(rowData.name)}
+                        filter
+                        filterPlaceholder="Search by name"
+                        filterElement={(options) => (
+                            <InputText
+                                value={options.value}
+                                onChange={(e) => options.filterApplyCallback(e.target.value)}
+                                placeholder="Search categories"
+                                className="p-column-filter"
+                            />
+                        )}
+                    />
+                    <Column
+                        header="Actions"
+                        body={(rowData: ServiceCategory) => (
+                            <div className="flex gap-2">
+                                <PencilIcon
+                                    className="h-5 w-5 text-green-500 cursor-pointer"
+                                    onClick={() => {
+                                        setEditingCategory(rowData);
+                                        setShowCategoryDialog(true);
+                                        setCategoryErrors({ name: false });
+                                    }}
+                                />
+                                <TrashIcon
+                                    className="h-5 w-5 text-red-500 cursor-pointer"
+                                    onClick={() => handleDeleteCategory(rowData)}
+                                />
+                            </div>
+                        )}
+                    />
+                </DataTable>
+            </Dialog>
+
             {/* Services Section */}
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
@@ -562,22 +734,30 @@ export default function GeneralSettings() {
                             <Info className="h-5 w-5 text-gray-500" />
                         </span>
                     </div>
-                    <Button
-                        label="Create Service"
-                        className="p-button-primary p-button-sm !px-4 !py-2"
-                        onClick={() => {
-                            setEditingService(null);
-                            setNewService({
-                                category: '',
-                                serviceName: '',
-                                serviceDescription: '',
-                                price: 0,
-                                vatRate: 25,
-                                deliveryPrice: 0
-                            });
-                            setShowServiceDialog(true);
-                        }}
-                    />
+                    <div className="flex gap-2">
+                        <Button
+                            label="Manage Categories"
+                            className="p-button-secondary p-button-sm !px-4 !py-2"
+                            outlined
+                            onClick={() => setShowCategoriesManager(true)}
+                        />
+                        <Button
+                            label="Create Service"
+                            className="p-button-primary p-button-sm !px-4 !py-2"
+                            onClick={() => {
+                                setEditingService(null);
+                                setNewService({
+                                    category: '',
+                                    serviceName: '',
+                                    serviceDescription: '',
+                                    price: 0,
+                                    vatRate: 25,
+                                    deliveryPrice: 0
+                                });
+                                setShowServiceDialog(true);
+                            }}
+                        />
+                    </div>
                 </div>
                 <Tooltip target="#services-info" content="Manage your service offerings, including pricing, VAT rates, and delivery costs." />
 
@@ -611,6 +791,7 @@ export default function GeneralSettings() {
                         field="serviceName"
                         header="Service (sv)"
                         sortable
+                        body={(rowData) => capitalizeWords(rowData.serviceName)}
                         filter
                         filterElement={(options) => (
                             <InputText
@@ -700,7 +881,11 @@ export default function GeneralSettings() {
                                 className={`w-full ${serviceErrors.serviceName ? 'p-invalid' : ''}`}
                                 placeholder="Enter service name"
                             />
-                            {serviceErrors.serviceName && <span className="text-xs text-red-500">Service name is required</span>}
+                            {serviceErrors.serviceName && (
+                                <span className="text-xs text-red-500">
+                                    {newService.serviceName.trim() ? 'Service already exists' : 'Service name is required'}
+                                </span>
+                            )}
                         </div>
                     </div>
 
@@ -793,6 +978,95 @@ export default function GeneralSettings() {
                         </div>
                     </div>
                 </div>
+            </Dialog>
+
+            {/* Create/Edit Category Dialog */}
+            <Dialog
+                header={editingCategory ? 'Edit Category' : 'Create Category'}
+                visible={showCategoryDialog}
+                style={{ width: '500px' }}
+                onHide={() => {
+                    setShowCategoryDialog(false);
+                    setEditingCategory(null);
+                    setCategoryErrors({ name: false });
+                }}
+                footer={
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            label="Cancel"
+                            className="p-button-primary"
+                            outlined
+                            onClick={() => {
+                                setShowCategoryDialog(false);
+                                setEditingCategory(null);
+                                setCategoryErrors({ name: false });
+                            }}
+                        />
+                        <Button
+                            label={editingCategory ? 'Update' : 'Create'}
+                            className="p-button-primary"
+                            onClick={editingCategory ? handleUpdateCategory : handleCreateCategory}
+                        />
+                    </div>
+                }
+            >
+                <div className="grid gap-4">
+                    <div className="field">
+                        <label htmlFor="categoryName" className="block mb-2">
+                            Category Name
+                        </label>
+                        <InputText
+                            id="categoryName"
+                            value={editingCategory ? editingCategory.name : newCategory.name}
+                            onChange={(e) => {
+                                if (editingCategory) {
+                                    setEditingCategory({ ...editingCategory, name: e.target.value });
+                                } else {
+                                    setNewCategory({ name: e.target.value });
+                                }
+                                setCategoryErrors({ name: false });
+                            }}
+                            className={`w-full ${categoryErrors.name ? 'p-invalid' : ''}`}
+                            placeholder="Enter category name"
+                        />
+                        {categoryErrors.name && (
+                            <span className="text-xs text-red-500">
+                                {newCategory.name.trim() ? 'Category already exists' : 'Category name is required'}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            </Dialog>
+
+            {/* Delete Category Confirmation Dialog */}
+            <Dialog
+                header="Confirm Delete Category"
+                visible={deleteCategoryDialog}
+                style={{ width: '400px' }}
+                onHide={() => setDeleteCategoryDialog(false)}
+                footer={
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            label="Cancel"
+                            className="p-button-primary"
+                            outlined
+                            onClick={() => setDeleteCategoryDialog(false)}
+                        />
+                        <Button
+                            label="Delete"
+                            className="p-button-danger"
+                            onClick={confirmDeleteCategory}
+                        />
+                    </div>
+                }
+            >
+                <p>Are you sure you want to delete this category?</p>
+                {itemToDelete && (
+                    <p className="font-semibold mt-2">{(itemToDelete as ServiceCategory).name}</p>
+                )}
+                <p className="text-red-500 text-sm mt-2">
+                    Warning: This will also delete all services under this category!
+                </p>
             </Dialog>
 
             {/* Delete Service Confirmation Dialog */}
