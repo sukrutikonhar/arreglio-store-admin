@@ -46,9 +46,9 @@ export default function GeneralSettings() {
     const [editingOpeningHour, setEditingOpeningHour] = useState<any>(null);
     const [toast, setToast] = useState<any>(null);
     const [openingHours, setOpeningHours] = useState([
-        { day: 'Monday', opens: '11:30', closes: '21:30', status: 'Open' },
-        { day: 'Tuesday', opens: '11:30', closes: '21:30', status: 'Open' },
-        { day: 'Wednesday', opens: '11:30', closes: '21:30', status: 'Open' },
+        { id: 1, day: 'Monday', opens: '11:30', closes: '21:30', status: 'Open' },
+        { id: 2, day: 'Tuesday', opens: '11:30', closes: '21:30', status: 'Open' },
+        { id: 3, day: 'Wednesday', opens: '11:30', closes: '21:30', status: 'Open' },
     ]);
 
     // Services state
@@ -211,8 +211,29 @@ export default function GeneralSettings() {
     ];
 
     const availableDays = daysOfWeek.filter(
-        (day) => !openingHours.some((item) => item.day === day)
+        (day) => {
+            // If editing, always show the current day being edited
+            if (editingOpeningHour && editingOpeningHour.day === day) {
+                return true;
+            }
+            // Otherwise, only show days that aren't already in the table
+            return !openingHours.some((item) => item.day === day);
+        }
     );
+
+    // Custom sort function for days to maintain Monday to Sunday sequence
+    const sortDays = (a: { day: string }, b: { day: string }) => {
+        const dayOrder: Record<string, number> = {
+            'Monday': 1,
+            'Tuesday': 2,
+            'Wednesday': 3,
+            'Thursday': 4,
+            'Friday': 5,
+            'Saturday': 6,
+            'Sunday': 7
+        };
+        return dayOrder[a.day] - dayOrder[b.day];
+    };
     const capitalizeWords = (str: string) =>
         str.toLowerCase()
             .split(' ')
@@ -446,14 +467,20 @@ export default function GeneralSettings() {
     const handleCreate = () => {
         const errors = {
             day: !newOpeningHours.day,
-            opens: !newOpeningHours.opens,
-            closes: !newOpeningHours.closes,
+            opens: newOpeningHours.status === 'Open' ? !newOpeningHours.opens : false,
+            closes: newOpeningHours.status === 'Open' ? !newOpeningHours.closes : false,
             status: !newOpeningHours.status
         };
         setOpenHoursErrors(errors);
         const hasError = Object.values(errors).some(Boolean);
         if (hasError) return;
-        setOpeningHours([...openingHours, newOpeningHours]);
+
+        const newOpeningHoursWithId = {
+            ...newOpeningHours,
+            id: Math.max(...openingHours.map(h => h.id), 0) + 1
+        };
+
+        setOpeningHours([...openingHours, newOpeningHoursWithId]);
         setShowCreateDialog(false);
         setNewOpeningHours({ day: '', opens: '', closes: '', status: 'Open' });
         setOpenHoursErrors({ day: false, opens: false, closes: false, status: false });
@@ -1106,15 +1133,24 @@ export default function GeneralSettings() {
                             <Info className="h-5 w-5 text-gray-500" />
                         </span>
                     </div>
-                    <Button
-                        label="Add Open Hours"
-                        className="p-button-primary p-button-sm !px-4 !py-2"
-                        onClick={() => setShowCreateDialog(true)}
-                    />
+                    <div className="flex flex-col items-end gap-2">
+                        <Button
+                            label={availableDays.length === 0 ? "All Days Added" : "Add Open Hours"}
+                            className={`p-button-primary p-button-sm !px-4 !py-2 ${availableDays.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            onClick={() => setShowCreateDialog(true)}
+                            disabled={availableDays.length === 0}
+                        />
+                        {availableDays.length === 0 && (
+                            <p className="text-sm text-gray-500 text-right">
+                                All days have been added. Delete or edit existing entries to add new ones.
+                            </p>
+                        )}
+                    </div>
                 </div>
                 <Tooltip target="#opening-hours-info" content="Define the time slots when your store or service is open. Customers can only place orders during these hours." />
                 <DataTable
-                    value={openingHours}
+                    value={openingHours.sort(sortDays)}
                     className="p-datatable-sm mb-8"
                     paginator
                     rows={5}
@@ -1122,9 +1158,29 @@ export default function GeneralSettings() {
                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                 >
                     <Column field="day" header="Day" sortable />
-                    <Column field="opens" header="Opens" sortable />
-                    <Column field="closes" header="Closes" sortable />
-                    <Column field="status" header="Status" sortable />
+                    <Column
+                        field="status"
+                        header="Status"
+                        body={(rowData) => (
+                            <Tag
+                                value={rowData.status}
+                                severity={rowData.status === 'Open' ? 'success' : 'danger'}
+                            />
+                        )}
+                        sortable
+                    />
+                    <Column
+                        field="opens"
+                        header="Opens"
+                        body={(rowData) => rowData.status === 'Open' ? rowData.opens : '-'}
+                        sortable
+                    />
+                    <Column
+                        field="closes"
+                        header="Closes"
+                        body={(rowData) => rowData.status === 'Open' ? rowData.closes : '-'}
+                        sortable
+                    />
                     <Column body={deleteTemplate} header="Actions" style={{ width: '100px' }} />
                 </DataTable>
             </div>
@@ -1172,38 +1228,41 @@ export default function GeneralSettings() {
                             {openHoursErrors.status && <span className="text-xs text-red-500">Status is required</span>}
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="field">
-                            <label htmlFor="opens" className="block mb-2">Opening Time</label>
-                            <Dropdown
-                                id="opens"
-                                value={newOpeningHours.opens}
-                                onChange={(e) => {
-                                    setNewOpeningHours({ ...newOpeningHours, opens: e.value });
-                                    setOpenHoursErrors(prev => ({ ...prev, opens: false }));
-                                }}
-                                options={generateTimeOptions()}
-                                className={`w-full ${openHoursErrors.opens ? 'p-invalid' : ''}`}
-                                placeholder="Select opening time"
-                            />
-                            {openHoursErrors.opens && <span className="text-xs text-red-500">Opening time is required</span>}
+                    {/* Conditionally show time inputs only when status is 'Open' */}
+                    {newOpeningHours.status === 'Open' && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="field">
+                                <label htmlFor="opens" className="block mb-2">Opening Time</label>
+                                <Dropdown
+                                    id="opens"
+                                    value={newOpeningHours.opens}
+                                    onChange={(e) => {
+                                        setNewOpeningHours({ ...newOpeningHours, opens: e.value });
+                                        setOpenHoursErrors(prev => ({ ...prev, opens: false }));
+                                    }}
+                                    options={generateTimeOptions()}
+                                    className={`w-full ${openHoursErrors.opens ? 'p-invalid' : ''}`}
+                                    placeholder="Select opening time"
+                                />
+                                {openHoursErrors.opens && <span className="text-xs text-red-500">Opening time is required</span>}
+                            </div>
+                            <div className="field">
+                                <label htmlFor="closes" className="block mb-2">Closing Time</label>
+                                <Dropdown
+                                    id="closes"
+                                    value={newOpeningHours.closes}
+                                    onChange={(e) => {
+                                        setNewOpeningHours({ ...newOpeningHours, closes: e.value });
+                                        setOpenHoursErrors(prev => ({ ...prev, closes: false }));
+                                    }}
+                                    options={generateTimeOptions()}
+                                    className={`w-full ${openHoursErrors.closes ? 'p-invalid' : ''}`}
+                                    placeholder="Select closing time"
+                                />
+                                {openHoursErrors.closes && <span className="text-xs text-red-500">Closing time is required</span>}
+                            </div>
                         </div>
-                        <div className="field">
-                            <label htmlFor="closes" className="block mb-2">Closing Time</label>
-                            <Dropdown
-                                id="closes"
-                                value={newOpeningHours.closes}
-                                onChange={(e) => {
-                                    setNewOpeningHours({ ...newOpeningHours, closes: e.value });
-                                    setOpenHoursErrors(prev => ({ ...prev, closes: false }));
-                                }}
-                                options={generateTimeOptions()}
-                                className={`w-full ${openHoursErrors.closes ? 'p-invalid' : ''}`}
-                                placeholder="Select closing time"
-                            />
-                            {openHoursErrors.closes && <span className="text-xs text-red-500">Closing time is required</span>}
-                        </div>
-                    </div>
+                    )}
                 </div>
             </Dialog>
 
@@ -1256,7 +1315,7 @@ export default function GeneralSettings() {
                                 if (editingOpeningHour) {
                                     setOpeningHours(prev =>
                                         prev.map(hour =>
-                                            hour === editingOpeningHour ? editingOpeningHour : hour
+                                            hour.id === editingOpeningHour.id ? editingOpeningHour : hour
                                         )
                                     );
                                     setEditOpeningHourDialog(false);
@@ -1282,7 +1341,7 @@ export default function GeneralSettings() {
                                     id="editDay"
                                     value={editingOpeningHour.day}
                                     onChange={(e) => setEditingOpeningHour({ ...editingOpeningHour, day: e.value })}
-                                    options={daysOfWeek.map(d => ({ label: d, value: d }))}
+                                    options={availableDays.map(d => ({ label: d, value: d }))}
                                     className="w-full"
                                 />
                             </div>
@@ -1297,34 +1356,37 @@ export default function GeneralSettings() {
                                 />
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="field">
-                                <label htmlFor="editOpens" className="block mb-2">Opening Time</label>
-                                <Dropdown
-                                    id="editOpens"
-                                    value={editingOpeningHour.opens}
-                                    onChange={(e) => {
-                                        setEditingOpeningHour({ ...editingOpeningHour, opens: e.value });
-                                    }}
-                                    options={generateTimeOptions()}
-                                    className="w-full"
-                                    placeholder="Select opening time"
-                                />
+                        {/* Conditionally show time inputs only when status is 'Open' */}
+                        {editingOpeningHour.status === 'Open' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="field">
+                                    <label htmlFor="editOpens" className="block mb-2">Opening Time</label>
+                                    <Dropdown
+                                        id="editOpens"
+                                        value={editingOpeningHour.opens}
+                                        onChange={(e) => {
+                                            setEditingOpeningHour({ ...editingOpeningHour, opens: e.value });
+                                        }}
+                                        options={generateTimeOptions()}
+                                        className="w-full"
+                                        placeholder="Select opening time"
+                                    />
+                                </div>
+                                <div className="field">
+                                    <label htmlFor="editCloses" className="block mb-2">Closing Time</label>
+                                    <Dropdown
+                                        id="editCloses"
+                                        value={editingOpeningHour.closes}
+                                        onChange={(e) => {
+                                            setEditingOpeningHour({ ...editingOpeningHour, closes: e.value });
+                                        }}
+                                        options={generateTimeOptions()}
+                                        className="w-full"
+                                        placeholder="Select closing time"
+                                    />
+                                </div>
                             </div>
-                            <div className="field">
-                                <label htmlFor="editCloses" className="block mb-2">Closing Time</label>
-                                <Dropdown
-                                    id="editCloses"
-                                    value={editingOpeningHour.closes}
-                                    onChange={(e) => {
-                                        setEditingOpeningHour({ ...editingOpeningHour, closes: e.value });
-                                    }}
-                                    options={generateTimeOptions()}
-                                    className="w-full"
-                                    placeholder="Select closing time"
-                                />
-                            </div>
-                        </div>
+                        )}
                     </div>
                 )}
             </Dialog>
