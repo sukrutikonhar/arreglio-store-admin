@@ -1128,14 +1128,14 @@ export default function GeneralSettings() {
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                        <h5 className="website-title">Opening hours</h5>
+                        <h5 className="website-title">Store hours</h5>
                         <span id="opening-hours-info" className="cursor-pointer">
                             <Info className="h-5 w-5 text-gray-500" />
                         </span>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                         <Button
-                            label={availableDays.length === 0 ? "All Days Added" : "Add Open Hours"}
+                            label={availableDays.length === 0 ? "All Days Added" : "Add Business Hours"}
                             className={`p-button-primary p-button-sm !px-4 !py-2 ${availableDays.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                             onClick={() => setShowCreateDialog(true)}
@@ -1148,7 +1148,7 @@ export default function GeneralSettings() {
                         )}
                     </div>
                 </div>
-                <Tooltip target="#opening-hours-info" content="Define the time slots when your store or service is open. Customers can only place orders during these hours." />
+                <Tooltip target="#opening-hours-info" content="Define your business operating hours when customers can place orders." />
                 <DataTable
                     value={openingHours.sort(sortDays)}
                     className="p-datatable-sm mb-8"
@@ -1185,7 +1185,7 @@ export default function GeneralSettings() {
                 </DataTable>
             </div>
 
-            <Dialog header="Create Open Hours"
+            <Dialog header="Create Business Hours"
                 visible={showCreateDialog}
                 style={{ width: '500px' }}
                 footer={dialogFooter}
