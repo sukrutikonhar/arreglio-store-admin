@@ -244,4 +244,53 @@
     font-family: "Outfit", sans-serif;
     font-weight: 900;
   }
+
+  /* Responsive DataTable Styles */
+  .responsive-datatable .p-datatable-wrapper {
+    overflow-x: auto;
+  }
+
+  .responsive-datatable .p-column-filter {
+    min-width: 120px;
+    width: 100%;
+  }
+
+  .responsive-datatable .p-column-filter input,
+  .responsive-datatable .p-column-filter .p-dropdown {
+    width: 100%;
+    min-width: 120px;
+  }
+
+  /* Mobile and Tablet specific styles */
+  @media (max-width: 768px) {
+    .responsive-datatable .p-column-filter {
+      min-width: 100px;
+    }
+
+    .responsive-datatable .p-datatable-thead > tr > th {
+      padding: 0.5rem 0.25rem;
+      font-size: 0.875rem;
+    }
+
+    .responsive-datatable .p-datatable-tbody > tr > td {
+      padding: 0.5rem 0.25rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .responsive-datatable .p-column-filter {
+      min-width: 80px;
+    }
+
+    .responsive-datatable .p-datatable-thead > tr > th {
+      padding: 0.25rem 0.125rem;
+      font-size: 0.75rem;
+    }
+
+    .responsive-datatable .p-datatable-tbody > tr > td {
+      padding: 0.25rem 0.125rem;
+      font-size: 0.75rem;
+    }
+  }
 }

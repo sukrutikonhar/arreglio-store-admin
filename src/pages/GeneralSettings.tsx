@@ -443,11 +443,13 @@ export default function GeneralSettings() {
                 className="h-5 w-5 text-green-500 cursor-pointer"
                 onClick={() => handleEditService(rowData)}
                 data-pr-tooltip="Edit Service"
+                title="Edit Service"
             />
             <TrashIcon
                 className="h-5 w-5 text-red-500 cursor-pointer"
                 onClick={() => handleDeleteService(rowData)}
                 data-pr-tooltip="Delete Service"
+                title="Delete Service"
             />
         </div>
     );
@@ -582,11 +584,13 @@ export default function GeneralSettings() {
                 className="h-5 w-5 text-green-500 cursor-pointer"
                 onClick={() => handleEditOpeningHour(rowData)}
                 data-pr-tooltip="Edit Opening Hours"
+                title="Edit Opening Hours"
             />
             <TrashIcon
                 className="h-5 w-5 text-red-500 cursor-pointer"
                 onClick={() => handleDeleteClick(rowData)}
                 data-pr-tooltip="Delete Opening Hours"
+                title="Delete Opening Hours"
             />
         </div>
     );
@@ -597,11 +601,13 @@ export default function GeneralSettings() {
                 className="h-5 w-5 text-green-500 cursor-pointer"
                 onClick={() => handleEditClick(rowData)}
                 data-pr-tooltip="Edit Delivery Slot"
+                title="Edit Delivery Slot"
             />
             <TrashIcon
                 className="h-5 w-5 text-red-500 cursor-pointer"
                 onClick={() => handleDeleteDeliverySlot(rowData)}
                 data-pr-tooltip="Delete Delivery Slot"
+                title="Delete Delivery Slot"
             />
         </div>
     );
@@ -684,10 +690,10 @@ export default function GeneralSettings() {
             <Dialog
                 header="Manage Categories"
                 visible={showCategoriesManager}
-                style={{ width: '700px' }}
+                style={{ width: '90vw', maxWidth: '700px' }}
                 onHide={() => setShowCategoriesManager(false)}
             >
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                     <div className="flex items-center gap-2">
                         <h6 className="text-sm font-medium text-gray-700">Service Categories</h6>
                         <span className="cursor-pointer">
@@ -696,7 +702,7 @@ export default function GeneralSettings() {
                     </div>
                     <Button
                         label="Create Category"
-                        className="p-button-primary p-button-sm !px-4 !py-2"
+                        className="p-button-primary p-button-sm !px-4 !py-2 w-full sm:w-auto"
                         onClick={() => {
                             setEditingCategory(null);
                             setNewCategory({ name: '' });
@@ -710,9 +716,11 @@ export default function GeneralSettings() {
                     paginator
                     rows={7}
                     rowsPerPageOptions={[7, 14, 21]}
+                    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
                     filters={categoryFilters}
                     onFilter={(e: DataTableFilterEvent) => setCategoryFilters(e.filters)}
                     filterDisplay="row"
+                    className="responsive-datatable"
                 >
                     <Column
                         field="name"
@@ -741,10 +749,12 @@ export default function GeneralSettings() {
                                         setShowCategoryDialog(true);
                                         setCategoryErrors({ name: false });
                                     }}
+                                    title="Edit Category"
                                 />
                                 <TrashIcon
                                     className="h-5 w-5 text-red-500 cursor-pointer"
                                     onClick={() => handleDeleteCategory(rowData)}
+                                    title="Delete Category"
                                 />
                             </div>
                         )}
@@ -754,109 +764,138 @@ export default function GeneralSettings() {
 
             {/* Services Section */}
             <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
                     <div className="flex items-center gap-2">
                         <h5 className="website-title">Services</h5>
                         <span id="services-info" className="cursor-pointer">
                             <Info className="h-5 w-5 text-gray-500" />
                         </span>
                     </div>
-                    <div className="flex gap-2">
-                        <Button
-                            label="Manage Categories"
-                            className="p-button-secondary p-button-sm !px-4 !py-2"
-                            outlined
-                            onClick={() => setShowCategoriesManager(true)}
-                        />
-                        <Button
-                            label="Create Service"
-                            className="p-button-primary p-button-sm !px-4 !py-2"
-                            onClick={() => {
-                                setEditingService(null);
-                                setNewService({
-                                    category: '',
-                                    serviceName: '',
-                                    serviceDescription: '',
-                                    price: 0,
-                                    vatRate: 25,
-                                    deliveryPrice: 0
-                                });
-                                setShowServiceDialog(true);
-                            }}
-                        />
+                    <div className="flex flex-col gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <Button
+                                label="Manage Categories"
+                                className="p-button-secondary p-button-sm !px-4 !py-2 w-full sm:w-auto"
+                                outlined
+                                onClick={() => setShowCategoriesManager(true)}
+                            />
+                            {categories.length === 0 ? (
+                                <Button
+                                    label="Create Service"
+                                    className="p-button-primary p-button-sm !px-4 !py-2 w-full sm:w-auto opacity-50 cursor-not-allowed"
+                                    disabled
+                                />
+                            ) : (
+                                <Button
+                                    label="Create Service"
+                                    className="p-button-primary p-button-sm !px-4 !py-2 w-full sm:w-auto"
+                                    onClick={() => {
+                                        setEditingService(null);
+                                        setNewService({
+                                            category: '',
+                                            serviceName: '',
+                                            serviceDescription: '',
+                                            price: 0,
+                                            vatRate: 25,
+                                            deliveryPrice: 0
+                                        });
+                                        setShowServiceDialog(true);
+                                    }}
+                                />
+                            )}
+                        </div>
+
+                        {categories.length === 0 && (
+                            <p className="text-sm text-red-500 leading-snug">
+                                No categories available. Please create a category first.
+                            </p>
+                        )}
                     </div>
+
                 </div>
                 <Tooltip target="#services-info" content="Manage your service offerings, including pricing, VAT rates, and delivery costs." />
 
-                <DataTable
-                    value={services}
-                    paginator
-                    rows={5}
-                    rowsPerPageOptions={[5, 10, 20]}
-                    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                    filters={serviceFilters}
-                    onFilter={(e) => setServiceFilters(e.filters)}
-                    filterDisplay="row"
-                >
-                    <Column
-                        field="category"
-                        header="Category"
-                        sortable
-                        filter
-                        filterElement={(options) => (
-                            <Dropdown
-                                value={options.value}
-                                onChange={(e) => options.filterApplyCallback(e.value)}
-                                options={categoryOptions}
-                                placeholder="Select"
-                                className="p-column-filter"
-                                showClear
-                            />
-                        )}
-                    />
-                    <Column
-                        field="serviceName"
-                        header="Service (sv)"
-                        sortable
-                        body={(rowData) => capitalizeWords(rowData.serviceName)}
-                        filter
-                        filterElement={(options) => (
-                            <InputText
-                                type="text"
-                                value={options.value || ''}
-                                onChange={(e) => options.filterApplyCallback(e.target.value)}
-                                placeholder="Filter"
-                                className="p-column-filter"
-                            />
-                        )}
-                    />
-                    <Column
-                        field="serviceDescription"
-                        header="Service Description (sv)"
-                        sortable
-                        filter
-                        filterElement={(options) => (
-                            <InputText
-                                type="text"
-                                value={options.value || ''}
-                                onChange={(e) => options.filterApplyCallback(e.target.value)}
-                                placeholder="Filter"
-                                className="p-column-filter"
-                            />
-                        )}
-                    />
-                    <Column field="price" header="Price (kr)" body={priceTemplate} sortable />
-                    <Column field="vatRate" header="Vat Rate %" body={vatTemplate} sortable />
-                    <Column field="deliveryPrice" header="Delivery price (kr)" body={deliveryPriceTemplate} sortable />
-                    <Column header="Actions" body={serviceDeleteTemplate} />
-                </DataTable>
+                {categories.length === 0 ? (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg">
+                        <p className="text-gray-500 mb-4">No services can be created without categories.</p>
+                        <Button
+                            label="Create Your First Category"
+                            className="p-button-primary"
+                            onClick={() => setShowCategoriesManager(true)}
+                        />
+                    </div>
+                ) : (
+                    <DataTable
+                        value={services}
+                        paginator
+                        rows={5}
+                        rowsPerPageOptions={[5, 10, 20]}
+                        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+                        filters={serviceFilters}
+                        onFilter={(e) => setServiceFilters(e.filters)}
+                        filterDisplay="row"
+                        className="responsive-datatable"
+                    >
+                        <Column
+                            field="category"
+                            header="Category"
+                            sortable
+                            filter
+                            filterElement={(options) => (
+                                <Dropdown
+                                    value={options.value}
+                                    onChange={(e) => options.filterApplyCallback(e.value)}
+                                    options={categoryOptions}
+                                    placeholder="Select"
+                                    className="p-column-filter"
+                                    showClear
+                                />
+                            )}
+                        />
+                        <Column
+                            field="serviceName"
+                            header="Service (sv)"
+                            sortable
+                            body={(rowData) => capitalizeWords(rowData.serviceName)}
+                            filter
+                            filterElement={(options) => (
+                                <InputText
+                                    type="text"
+                                    value={options.value || ''}
+                                    onChange={(e) => options.filterApplyCallback(e.target.value)}
+                                    placeholder="Filter"
+                                    className="p-column-filter"
+                                />
+                            )}
+                        />
+                        <Column
+                            field="serviceDescription"
+                            header="Service Description (sv)"
+                            sortable
+                            filter
+                            filterElement={(options) => (
+                                <InputText
+                                    type="text"
+                                    value={options.value || ''}
+                                    onChange={(e) => options.filterApplyCallback(e.target.value)}
+                                    placeholder="Filter"
+                                    className="p-column-filter"
+                                />
+                            )}
+                        />
+                        <Column field="price" header="Price (kr)" body={priceTemplate} sortable />
+                        <Column field="vatRate" header="Vat Rate %" body={vatTemplate} sortable />
+                        <Column field="deliveryPrice" header="Delivery price (kr)" body={deliveryPriceTemplate} sortable />
+                        <Column header="Actions" body={serviceDeleteTemplate} />
+                    </DataTable>
+                )}
             </div>
 
             {/* Service Dialog */}
             <Dialog
                 header={editingService ? "Edit Service" : "Create Service"}
                 visible={showServiceDialog}
-                style={{ width: '700px' }}
+                style={{ width: '90vw', maxWidth: '700px' }}
                 footer={serviceDialogFooter}
                 onHide={() => {
                     setShowServiceDialog(false);
@@ -872,7 +911,7 @@ export default function GeneralSettings() {
                 }}
             >
                 <div className="grid gap-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="field">
                             <label htmlFor="category" className="block mb-2">Category</label>
                             <Dropdown
@@ -936,7 +975,7 @@ export default function GeneralSettings() {
                         {serviceErrors.serviceDescription && <span className="text-xs text-red-500">Service description is required</span>}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div className="field">
                             <label htmlFor="price" className="block mb-2">Price (kr)</label>
                             <InputNumber
@@ -1011,7 +1050,7 @@ export default function GeneralSettings() {
             <Dialog
                 header={editingCategory ? 'Edit Category' : 'Create Category'}
                 visible={showCategoryDialog}
-                style={{ width: '500px' }}
+                style={{ width: '90vw', maxWidth: '500px' }}
                 onHide={() => {
                     setShowCategoryDialog(false);
                     setEditingCategory(null);
@@ -1069,7 +1108,7 @@ export default function GeneralSettings() {
             <Dialog
                 header="Confirm Delete Category"
                 visible={deleteCategoryDialog}
-                style={{ width: '400px' }}
+                style={{ width: '90vw', maxWidth: '400px' }}
                 onHide={() => setDeleteCategoryDialog(false)}
                 footer={
                     <div className="flex justify-end gap-2">
@@ -1100,7 +1139,7 @@ export default function GeneralSettings() {
             <Dialog
                 header="Confirm Delete Service"
                 visible={deleteServiceDialog}
-                style={{ width: '400px' }}
+                style={{ width: '90vw', maxWidth: '400px' }}
                 onHide={() => setDeleteServiceDialog(false)}
                 footer={
                     <div className="flex justify-end gap-2">
@@ -1126,23 +1165,23 @@ export default function GeneralSettings() {
 
             {/* Opening Hours Section */}
             <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
                     <div className="flex items-center gap-2">
                         <h5 className="website-title">Store hours</h5>
                         <span id="opening-hours-info" className="cursor-pointer">
                             <Info className="h-5 w-5 text-gray-500" />
                         </span>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-start lg:items-end gap-2">
                         <Button
                             label={availableDays.length === 0 ? "All Days Added" : "Add Business Hours"}
-                            className={`p-button-primary p-button-sm !px-4 !py-2 ${availableDays.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                            className={`p-button-primary p-button-sm !px-4 !py-2 w-full sm:w-auto ${availableDays.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                             onClick={() => setShowCreateDialog(true)}
                             disabled={availableDays.length === 0}
                         />
                         {availableDays.length === 0 && (
-                            <p className="text-sm text-gray-500 text-right">
+                            <p className="text-sm text-red-500 text-left lg:text-right">
                                 All days have been added. Delete or edit existing entries to add new ones.
                             </p>
                         )}
@@ -1155,7 +1194,7 @@ export default function GeneralSettings() {
                     paginator
                     rows={5}
                     rowsPerPageOptions={[5, 10, 20]}
-                    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
                 >
                     <Column field="day" header="Day" sortable />
                     <Column
@@ -1187,7 +1226,7 @@ export default function GeneralSettings() {
 
             <Dialog header="Create Business Hours"
                 visible={showCreateDialog}
-                style={{ width: '500px' }}
+                style={{ width: '90vw', maxWidth: '500px' }}
                 footer={dialogFooter}
                 onHide={() => {
                     setShowCreateDialog(false);
@@ -1195,7 +1234,7 @@ export default function GeneralSettings() {
                 }}>
 
                 <div className="grid gap-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="field">
                             <label htmlFor="day" className="block mb-2">Day</label>
                             <Dropdown
@@ -1270,7 +1309,7 @@ export default function GeneralSettings() {
             <Dialog
                 header="Confirm Delete Opening Hours"
                 visible={deleteOpeningHourDialog}
-                style={{ width: '400px' }}
+                style={{ width: '90vw', maxWidth: '400px' }}
                 onHide={() => setDeleteOpeningHourDialog(false)}
                 footer={
                     <div className="flex justify-end gap-2">
@@ -1298,7 +1337,7 @@ export default function GeneralSettings() {
             <Dialog
                 header="Edit Opening Hours"
                 visible={editOpeningHourDialog}
-                style={{ width: '500px' }}
+                style={{ width: '90vw', maxWidth: '500px' }}
                 onHide={() => setEditOpeningHourDialog(false)}
                 footer={
                     <div className="flex justify-end gap-2">
@@ -1393,18 +1432,20 @@ export default function GeneralSettings() {
 
             {/* Delivery Hours Section */}
             <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
                     <div className="flex items-center gap-2">
                         <h5 className="website-title">Delivery hours</h5>
                         <span id="delivery-hours-info" className="cursor-pointer">
                             <Info className="h-5 w-5 text-gray-500" />
                         </span>
                     </div>
-                    <Button
-                        label="Add Delivery Slot"
-                        className="p-button-primary p-button-sm !px-4 !py-2"
-                        onClick={() => setShowDeliverySlotDialog(true)}
-                    />
+                    <div className="flex flex-col items-start lg:items-end gap-2">
+                        <Button
+                            label="Add Delivery Slot"
+                            className="p-button-primary p-button-sm !px-4 !py-2 w-full sm:w-auto"
+                            onClick={() => setShowDeliverySlotDialog(true)}
+                        />
+                    </div>
                 </div>
                 <Tooltip target="#delivery-hours-info" content="Specify the time slots during which deliveries are available. Ensure they align with your operational capabilities." />
 
@@ -1413,10 +1454,11 @@ export default function GeneralSettings() {
                     paginator
                     rows={5}
                     rowsPerPageOptions={[5, 10, 20]}
-                    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
                     filters={deliverySlotFilters}
                     onFilter={(e) => setDeliverySlotFilters(e.filters)}
                     filterDisplay="row"
+                    className="responsive-datatable"
                 >
                     <Column
                         field="region"
@@ -1476,7 +1518,7 @@ export default function GeneralSettings() {
                 <Dialog
                     header="Add Delivery Slot"
                     visible={showDeliverySlotDialog}
-                    style={{ width: '600px' }}
+                    style={{ width: '90vw', maxWidth: '600px' }}
                     footer={deliverySlotDialogFooter}
                     onHide={() => setShowDeliverySlotDialog(false)}
                 >
