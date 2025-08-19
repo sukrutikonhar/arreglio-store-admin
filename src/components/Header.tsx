@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Menu, Search, Home, BarChart2, Wrench, ShoppingBag, X, User, LogOut, Settings } from "lucide-react";
 import { Cog8ToothIcon } from "@heroicons/react/24/solid";
 import { Button } from "primereact/button";
@@ -34,7 +34,6 @@ export default function Header() {
     const [isNavOpen, setIsNavOpen] = useState(false);
     const [activeIcon, setActiveIcon] = useState<ActiveIconType>(null);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-
     const [showUserPanel, setShowUserPanel] = useState(false);
     const [showUserSettings, setShowUserSettings] = useState(false);
     const [user, setUser] = useState<User>(mockUser);
@@ -42,6 +41,8 @@ export default function Header() {
     const searchInputRef = useRef<HTMLInputElement>(null);
     const userPanelRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const location = useLocation();
+    const isOverviewActive = location.pathname === '/overview' || location.pathname.startsWith('/order/');
 
     const handleMenuClick = () => {
         setIsNavOpen(prev => !prev);
@@ -219,24 +220,45 @@ export default function Header() {
                     <nav className="bg-white shadow px-6 py-2">
                         <ul className="flex space-x-4">
                             <li>
-                                <Link to="/dashboard" className="text-gray-700 hover:underline">
+                                <NavLink
+                                    to="/dashboard"
+                                    className={({ isActive }) =>
+                                        `text-gray-700 hover:underline transition-colors duration-200 ${isActive ? "text-green-600 hover:text-green-600 hover:underline pb-1" : ""
+                                        }`
+                                    }
+                                >
                                     Dashboard
-                                </Link>
+                                </NavLink>
                             </li>
                             <li>
-                                <Link to="/overview" className="text-gray-700 hover:underline">
+                                <NavLink
+                                    to="/overview"
+                                    className={`text-gray-700 hover:underline transition-colors duration-200 ${isOverviewActive ? "text-green-600 hover:text-green-600 hover:underline pb-1" : ""}`}
+                                >
                                     Overview
-                                </Link>
+                                </NavLink>
                             </li>
                             <li>
-                                <Link to="/service" className="text-gray-700 hover:underline">
+                                <NavLink
+                                    to="/service-team"
+                                    className={({ isActive }) =>
+                                        `text-gray-700 hover:underline transition-colors duration-200 ${isActive ? "text-green-600 hover:text-green-600 hover:underline pb-1" : ""
+                                        }`
+                                    }
+                                >
                                     Service
-                                </Link>
+                                </NavLink>
                             </li>
                             <li>
-                                <Link to="/marketplace" className="text-gray-700 hover:underline">
-                                    Marketplace
-                                </Link>
+                                <NavLink
+                                    to="/customers"
+                                    className={({ isActive }) =>
+                                        `text-gray-700 hover:underline transition-colors duration-200 ${isActive ? "text-green-600 hover:text-green-600 hover:underline pb-1" : ""
+                                        }`
+                                    }
+                                >
+                                    Customers
+                                </NavLink>
                             </li>
                         </ul>
                     </nav>
@@ -249,62 +271,68 @@ export default function Header() {
                     {/* Overlay */}
                     <div className="fixed inset-0 bg-black opacity-50" onClick={() => setIsNavOpen(false)}></div>
                     {/* Sidebar */}
-                    <div className="relative bg-white w-64 h-full shadow-xl">
+                    <div className="relative bg-gray-700 w-64 h-full shadow-xl">
                         <div className="flex items-center justify-between p-4 border-b">
                             <img src="/images/logos/logo.svg" alt="Arreglio Logo" className="h-8" />
                             <button onClick={() => setIsNavOpen(false)} className="header-icon">
-                                <X className="w-6 h-6" />
+                                <X className="w-6 h-6 text-white" />
                             </button>
                         </div>
                         <nav className="p-4">
                             <ul className="space-y-4">
                                 <li>
-                                    <Link
-                                        onClick={() => setIsNavOpen(false)}
+                                    <NavLink
                                         to="/dashboard"
-                                        className="flex items-center space-x-3 text-gray-700 hover:text-blue-600"
+                                        className={({ isActive }) =>
+                                            `flex items-center space-x-3 text-gray-700 hover:bg-gray-700 transition-colors ${isActive ? "text-green-400 bg-gray-700 border-r-2 border-green-400" : "text-white"
+                                            }`
+                                        }
                                     >
-                                        <Home className="w-5 h-5" />
+                                        <Home size={20} />
                                         <span>Dashboard</span>
-                                    </Link>
+                                    </NavLink>
                                 </li>
                                 <li>
-                                    <Link
-                                        onClick={() => setIsNavOpen(false)}
+                                    <NavLink
                                         to="/overview"
-                                        className="flex items-center space-x-3 text-gray-700 hover:text-blue-600"
+                                        className={({ isActive }) =>
+                                            `flex items-center space-x-3 hover:bg-gray-700 transition-colors ${isActive ? "text-green-400 bg-gray-700 border-r-2 border-green-400" : "text-white"
+                                            }`
+                                        }
                                     >
-                                        <BarChart2 className="w-5 h-5" />
+                                        <BarChart2 size={20} />
                                         <span>Overview</span>
-                                    </Link>
+                                    </NavLink>
                                 </li>
                                 <li>
-                                    <Link
-                                        onClick={() => setIsNavOpen(false)}
-                                        to="/service"
-                                        className="flex items-center space-x-3 text-gray-700 hover:text-blue-600"
+                                    <NavLink
+                                        to="/service-team"
+                                        className={({ isActive }) =>
+                                            `flex items-center space-x-3 hover:bg-gray-700 transition-colors ${isActive ? "text-green-400 bg-gray-700 border-r-2 border-green-400" : "text-white"
+                                            }`
+                                        }
                                     >
-                                        <Wrench className="w-5 h-5" />
+                                        <Wrench size={20} />
                                         <span>Service</span>
-                                    </Link>
+                                    </NavLink>
                                 </li>
                                 <li>
-                                    <Link
-                                        onClick={() => setIsNavOpen(false)}
-                                        to="/marketplace"
-                                        className="flex items-center space-x-3 text-gray-700 hover:text-blue-600"
+                                    <NavLink
+                                        to="/customers"
+                                        className={({ isActive }) =>
+                                            `flex items-center space-x-3 hover:bg-gray-700 transition-colors ${isActive ? "text-green-400 bg-gray-700 border-r-2 border-green-400" : "text-white"
+                                            }`
+                                        }
                                     >
-                                        <ShoppingBag className="w-5 h-5" />
-                                        <span>Marketplace</span>
-                                    </Link>
+                                        <ShoppingBag size={20} />
+                                        <span>Customers</span>
+                                    </NavLink>
                                 </li>
                             </ul>
                         </nav>
                     </div>
                 </div>
             )}
-
-
 
             {/* User Settings Dialog */}
             <Dialog
