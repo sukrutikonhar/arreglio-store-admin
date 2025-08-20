@@ -886,14 +886,14 @@ export default function CreateOrder() {
 
             <div className="p-2 sm:p-4 md:p-8">
                 {/* Header */}
-                <div className="flex items-center gap-4 mb-6">
+                <div className="gap-4 mb-6">
                     <Button
                         icon={<ArrowLeft className="w-4 h-4" />}
                         label="Back to Overview"
-                        className="p-button-text"
+                        className="p-button-text !p-0"
                         onClick={() => navigate('/overview')}
                     />
-                    <div className="flex-1">
+                    <div className="mt-6">
                         <h1 className="text-3xl font-bold text-primary">
                             Create New Order
                         </h1>
