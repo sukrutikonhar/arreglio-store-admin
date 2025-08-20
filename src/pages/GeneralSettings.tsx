@@ -19,6 +19,7 @@ import { Tooltip } from 'primereact/tooltip';
 import { Toast } from 'primereact/toast';
 import { useNavigate } from 'react-router-dom';
 import { InputTextarea } from 'primereact/inputtextarea';
+import { useServiceContext } from '../context/ServiceContext';
 
 interface Service {
     id: number;
@@ -37,6 +38,7 @@ interface ServiceCategory {
 
 export default function GeneralSettings() {
     const navigate = useNavigate();
+    const { services, addService, updateService, deleteService } = useServiceContext();
 
     const [editDialogVisible, setEditDialogVisible] = useState(false);
     const [selectedDeliverySlot, setSelectedDeliverySlot] = useState<any>(null);
@@ -51,54 +53,7 @@ export default function GeneralSettings() {
         { id: 3, day: 'Wednesday', opens: '11:30', closes: '21:30', status: 'Open' },
     ]);
 
-    // Services state
-    const [services, setServices] = useState<Service[]>([
-        {
-            id: 1,
-            category: 'Electric Bike',
-            serviceName: 'Bike wash',
-            serviceDescription: 'Bike wash',
-            price: 250.00,
-            vatRate: 25.00,
-            deliveryPrice: 0.00
-        },
-        {
-            id: 2,
-            category: 'Regular Bike',
-            serviceName: 'Vet du inte vilket problem produkten har?',
-            serviceDescription: 'Vi hämtar din produkt och verkstaden bedömer vad som är fel och återkommer till dig med ett förslag genom Fixi.',
-            price: 0.00,
-            vatRate: 25.00,
-            deliveryPrice: 0.00
-        },
-        {
-            id: 3,
-            category: 'Cargo Bike',
-            serviceName: 'Wheel alignment',
-            serviceDescription: 'wheel alignment',
-            price: 400.00,
-            vatRate: 25.00,
-            deliveryPrice: 299.00
-        },
-        {
-            id: 4,
-            category: 'Scooter',
-            serviceName: 'Bike Wash Service',
-            serviceDescription: 'Wash Service',
-            price: 25.00,
-            vatRate: 25.00,
-            deliveryPrice: 0.00
-        },
-        {
-            id: 5,
-            category: 'Electric Bike',
-            serviceName: 'make something',
-            serviceDescription: 'make something',
-            price: 55.00,
-            vatRate: 25.00,
-            deliveryPrice: 0.00
-        }
-    ]);
+
 
     // Categories state
     const [categories, setCategories] = useState<ServiceCategory[]>([
@@ -255,12 +210,9 @@ export default function GeneralSettings() {
 
         if (Object.values(errors).some(Boolean)) return;
 
-        const newServiceWithId: Service = {
-            ...newService,
-            id: Math.max(...services.map(s => s.id), 0) + 1
-        };
 
-        setServices([...services, newServiceWithId]);
+
+        addService(newService);
         setShowServiceDialog(false);
         setNewService({
             category: '',
@@ -306,7 +258,7 @@ export default function GeneralSettings() {
 
         if (Object.values(errors).some(Boolean)) return;
 
-        setServices(services.map(s => s.id === editingService.id ? editingService : s));
+        updateService(editingService.id, editingService);
         setShowServiceDialog(false);
         setEditingService(null);
         setServiceErrors({
@@ -355,7 +307,12 @@ export default function GeneralSettings() {
         setCategories(categories.map((c) => (c.id === editingCategory.id ? { ...editingCategory, name: updatedName } : c)));
 
         if (previous && previous.name !== updatedName) {
-            setServices((prev) => prev.map((s) => (s.category === previous.name ? { ...s, category: updatedName } : s)));
+            // Update services with new category name
+            services.forEach(service => {
+                if (service.category === previous.name) {
+                    updateService(service.id, { category: updatedName });
+                }
+            });
         }
 
         setShowCategoryDialog(false);
@@ -373,9 +330,11 @@ export default function GeneralSettings() {
         if (!category) return;
 
         // Remove services that belong to this category
-        setServices(prevServices =>
-            prevServices.filter(service => service.category !== category.name)
-        );
+        services.forEach(service => {
+            if (service.category === category.name) {
+                deleteService(service.id);
+            }
+        });
 
         // Remove the category itself
         setCategories(prevCategories =>
@@ -399,7 +358,7 @@ export default function GeneralSettings() {
     };
 
     const confirmDeleteService = () => {
-        setServices(services.filter(s => s.id !== itemToDelete.id));
+        deleteService(itemToDelete.id);
         setDeleteServiceDialog(false);
         setItemToDelete(null);
         setToast({

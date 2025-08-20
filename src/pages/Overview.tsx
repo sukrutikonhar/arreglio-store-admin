@@ -13,7 +13,7 @@ import { Toast } from 'primereact/toast';
 import { useTeamContext } from '../context/TeamContext';
 import {
     ChevronLeft, ChevronRight, MessageCircle, Paperclip, Clock, AlertCircle, Bolt, XCircle, Filter, Plus,
-    MoreVertical, User, Tag, Calendar, FileText
+    MoreVertical, User, Calendar, FileText
 } from 'lucide-react';
 
 const statuses = [
@@ -35,18 +35,18 @@ const priorities = [
 
 
 const mockOrders = [
-    { id: 17, status: 'work_in_progress', priority: 'high', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 1, attachments: 2, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 18, status: 'received', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 1, attachments: 1, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 19, status: 'drop_by_customer', priority: 'urgent', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 20, status: 'waiting_customer_reply', priority: 'on_hold', assigned: true, assignedUser: { name: 'Bob Wilson', avatar: null }, comments: 1, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 21, status: 'waiting_for_parts', priority: 'closed', assigned: true, assignedUser: { name: 'John Smith', avatar: null }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 22, status: 'pickup_by_customer', priority: 'completed', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 23, status: 'drop_by_customer', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 2, attachments: 1, description: 'Urgent repair needed for customer equipment', date: 'Tomorrow 2:00 PM' },
-    { id: 24, status: 'received', priority: 'high', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 0, attachments: 0, description: 'Regular maintenance check for office equipment', date: 'Friday 10:00 AM' },
-    { id: 25, status: 'work_in_progress', priority: 'urgent', assigned: true, assignedUser: { name: 'Bob Wilson', avatar: null }, comments: 1, attachments: 2, description: 'System upgrade and configuration for new client', date: 'Today 4:00 PM' },
-    { id: 26, status: 'waiting_customer_reply', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 0, attachments: 1, description: 'Waiting for customer approval on proposed solution', date: 'Next Monday 9:00 AM' },
-    { id: 27, status: 'waiting_for_parts', priority: 'high', assigned: true, assignedUser: { name: 'John Smith', avatar: null }, comments: 2, attachments: 0, description: 'Parts ordered, waiting for delivery from supplier', date: 'Wednesday 3:00 PM' },
-    { id: 28, status: 'pickup_by_customer', priority: 'completed', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 1, attachments: 0, description: 'Completed repair, ready for customer pickup', date: 'Yesterday 5:00 PM' },
+    { id: 17, orderNumber: 'ORD-1017', status: 'work_in_progress', priority: 'high', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 1, attachments: 2, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 18, orderNumber: 'ORD-1018', status: 'received', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 1, attachments: 1, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 19, orderNumber: 'ORD-1019', status: 'drop_by_customer', priority: 'urgent', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 20, orderNumber: 'ORD-1020', status: 'waiting_customer_reply', priority: 'on_hold', assigned: true, assignedUser: { name: 'Bob Wilson', avatar: null }, comments: 1, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 21, orderNumber: 'ORD-1021', status: 'waiting_for_parts', priority: 'closed', assigned: true, assignedUser: { name: 'John Smith', avatar: null }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 22, orderNumber: 'ORD-1022', status: 'pickup_by_customer', priority: 'completed', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 23, orderNumber: 'ORD-1023', status: 'drop_by_customer', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 2, attachments: 1, description: 'Urgent repair needed for customer equipment', date: 'Tomorrow 2:00 PM' },
+    { id: 24, orderNumber: 'ORD-1024', status: 'received', priority: 'high', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 0, attachments: 0, description: 'Regular maintenance check for office equipment', date: 'Friday 10:00 AM' },
+    { id: 25, orderNumber: 'ORD-1025', status: 'work_in_progress', priority: 'urgent', assigned: true, assignedUser: { name: 'Bob Wilson', avatar: null }, comments: 1, attachments: 2, description: 'System upgrade and configuration for new client', date: 'Today 4:00 PM' },
+    { id: 26, orderNumber: 'ORD-1026', status: 'waiting_customer_reply', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 0, attachments: 1, description: 'Waiting for customer approval on proposed solution', date: 'Next Monday 9:00 AM' },
+    { id: 27, orderNumber: 'ORD-1027', status: 'waiting_for_parts', priority: 'high', assigned: true, assignedUser: { name: 'John Smith', avatar: null }, comments: 2, attachments: 0, description: 'Parts ordered, waiting for delivery from supplier', date: 'Wednesday 3:00 PM' },
+    { id: 28, orderNumber: 'ORD-1028', status: 'pickup_by_customer', priority: 'completed', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 1, attachments: 0, description: 'Completed repair, ready for customer pickup', date: 'Yesterday 5:00 PM' },
 ];
 
 const priorityIcon = (priority: string) => {
@@ -64,12 +64,12 @@ interface NewOrder {
     customerEmail: string;
     customerPhone: string;
     estimatedCost: string;
-    tags: string[];
     files: File[];
 }
 
 interface Order {
     id: number;
+    orderNumber?: string; // Add formatted order number
     status: string;
     priority: string;
     assigned: boolean;
@@ -82,7 +82,6 @@ interface Order {
     customerEmail?: string;
     customerPhone?: string;
     estimatedCost?: string;
-    tags?: string[];
 }
 
 export default function Overview() {
@@ -100,13 +99,37 @@ export default function Overview() {
         customerEmail: '',
         customerPhone: '',
         estimatedCost: '',
-        tags: [],
         files: []
     });
     const [draggedOrder, setDraggedOrder] = useState<number | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [tagInput, setTagInput] = useState('');
+
+    // Check for new orders from CreateOrder page
+    useEffect(() => {
+        const newOrderData = localStorage.getItem('newOrder');
+        if (newOrderData) {
+            try {
+                const orderData = JSON.parse(newOrderData);
+                // Add the new order to the beginning of the orders array
+                setOrders(prev => [orderData, ...prev]);
+                // Remove from localStorage
+                localStorage.removeItem('newOrder');
+
+                // Show success toast
+                toast.current?.show({
+                    severity: 'success',
+                    summary: 'New Order Added',
+                    detail: `${orderData.orderNumber || `Order #${orderData.id}`} has been added to the kanban board!`,
+                    life: 5000
+                });
+            } catch (error) {
+                console.error('Error parsing new order data:', error);
+                localStorage.removeItem('newOrder');
+            }
+        }
+    }, []);
+
     const navigate = useNavigate();
     const menuRef = useRef<TieredMenuType | null>(null);
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
@@ -187,22 +210,7 @@ export default function Overview() {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleAddTag = () => {
-        if (tagInput.trim() && !newOrder.tags.includes(tagInput.trim())) {
-            setNewOrder(prev => ({
-                ...prev,
-                tags: [...prev.tags, tagInput.trim()]
-            }));
-            setTagInput('');
-        }
-    };
 
-    const handleRemoveTag = (tagToRemove: string) => {
-        setNewOrder(prev => ({
-            ...prev,
-            tags: prev.tags.filter(tag => tag !== tagToRemove)
-        }));
-    };
 
     const handleFileUpload = (event: any) => {
         const files = Array.from(event.files) as File[];
@@ -239,7 +247,7 @@ export default function Overview() {
             toast.current?.show({
                 severity: 'success',
                 summary: 'Order Moved',
-                detail: `Order #${selectedOrderId} moved to ${statuses.find(s => s.key === newStatus)?.label}`,
+                detail: `${orders.find(o => o.id === selectedOrderId)?.orderNumber || `Order #${selectedOrderId}`} moved to ${statuses.find(s => s.key === newStatus)?.label}`,
                 life: 3000
             });
         }
@@ -266,7 +274,7 @@ export default function Overview() {
             toast.current?.show({
                 severity: 'success',
                 summary: 'Order Moved',
-                detail: `Order #${draggedOrder} moved to ${statuses.find(s => s.key === targetStatus)?.label}`,
+                detail: `${orders.find(o => o.id === draggedOrder)?.orderNumber || `Order #${draggedOrder}`} moved to ${statuses.find(s => s.key === targetStatus)?.label}`,
                 life: 3000
             });
             setDraggedOrder(null);
@@ -298,7 +306,7 @@ export default function Overview() {
                 customerEmail: newOrder.customerEmail,
                 customerPhone: newOrder.customerPhone,
                 estimatedCost: newOrder.estimatedCost,
-                tags: newOrder.tags
+
             };
 
             setOrders(prev => [newOrderData, ...prev]);
@@ -314,7 +322,6 @@ export default function Overview() {
                 customerEmail: '',
                 customerPhone: '',
                 estimatedCost: '',
-                tags: [],
                 files: []
             });
 
@@ -324,7 +331,7 @@ export default function Overview() {
             toast.current?.show({
                 severity: 'success',
                 summary: 'Order Created',
-                detail: `Order #${newOrderData.id} has been created successfully!`,
+                detail: `${newOrderData.orderNumber || `Order #${newOrderData.id}`} has been created successfully!`,
                 life: 5000
             });
 
@@ -351,11 +358,10 @@ export default function Overview() {
             customerEmail: '',
             customerPhone: '',
             estimatedCost: '',
-            tags: [],
             files: []
         });
         setErrors({});
-        setTagInput('');
+
     };
 
     useEffect(() => {
@@ -393,7 +399,7 @@ export default function Overview() {
                     icon={<Plus className="w-4 h-4" />}
                     label="Create Order"
                     className="p-button-success bg-green-600 hover:bg-green-700"
-                    onClick={() => setCreateOrderModal(true)}
+                    onClick={() => navigate('/create-order')}
                 />
             </div>
 
@@ -480,7 +486,7 @@ export default function Overview() {
                                                     <div className="flex items-center gap-2 mb-3">
                                                         {priorityIcon(order.priority)}
                                                         <span className="font-semibold text-[#018545] bg-[#F5F5F5] px-2 py-1 rounded text-sm">
-                                                            Order # {order.id}
+                                                            {order.orderNumber || `Order #${order.id}`}
                                                         </span>
                                                     </div>
 
@@ -494,22 +500,7 @@ export default function Overview() {
                                                         </div>
                                                     )}
 
-                                                    {/* Tags if exist */}
-                                                    {order.tags && order.tags.length > 0 && (
-                                                        <div className="flex flex-wrap gap-1 mb-2">
-                                                            {order.tags.slice(0, 3).map((tag, index) => (
-                                                                <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                                                                    <Tag className="w-3 h-3 mr-1" />
-                                                                    {tag}
-                                                                </span>
-                                                            ))}
-                                                            {order.tags.length > 3 && (
-                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
-                                                                    +{order.tags.length - 3}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
+
 
                                                     {/* Assignee + Comments/Attachments Row */}
                                                     <div className="flex justify-between items-center mb-3">
@@ -560,8 +551,8 @@ export default function Overview() {
                                                     {/* Estimated cost if exists */}
                                                     {order.estimatedCost && (
                                                         <div className="flex items-center gap-2 text-sm text-green-600 font-medium mt-2">
-                                                            <Tag className="w-4 h-4" />
-                                                            ${order.estimatedCost}
+                                                            <span className="text-green-600">$</span>
+                                                            {order.estimatedCost}
                                                         </div>
                                                     )}
                                                 </div>
@@ -626,7 +617,7 @@ export default function Overview() {
                                 Order Number
                             </label>
                             <InputText
-                                value={`#${Math.max(...orders.map(o => o.id)) + 1}`}
+                                value={`ORD-${Math.max(...orders.map(o => o.id)) + 1}`}
                                 className="w-full bg-gray-50"
                                 disabled
                             />
@@ -758,46 +749,7 @@ export default function Overview() {
                         </div>
                     </div>
 
-                    {/* Tags */}
-                    <div className="border-t pt-4">
-                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
-                            <Tag className="w-5 h-5" />
-                            Tags
-                        </h3>
-                        <div className="flex gap-2 mb-3">
-                            <InputText
-                                value={tagInput}
-                                onChange={(e) => setTagInput(e.target.value)}
-                                placeholder="Add a tag"
-                                className="flex-1"
-                                onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                            />
-                            <Button
-                                label="Add"
-                                className="p-button-outlined"
-                                onClick={handleAddTag}
-                                disabled={!tagInput.trim()}
-                            />
-                        </div>
-                        {newOrder.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                                {newOrder.tags.map((tag, index) => (
-                                    <span
-                                        key={index}
-                                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
-                                    >
-                                        {tag}
-                                        <button
-                                            onClick={() => handleRemoveTag(tag)}
-                                            className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
-                                        >
-                                            <XCircle className="w-4 h-4" />
-                                        </button>
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+
 
                     {/* File Uploads */}
                     <div className="border-t pt-4">

@@ -7,6 +7,7 @@ import GeneralSettings from "../pages/GeneralSettings";
 import FinancialSettings from "../pages/FinancialSettings";
 import StorePage from '../pages/StorePage';
 import Overview from '../pages/Overview';
+import CreateOrder from '../pages/CreateOrder';
 import OrderDetails from '../pages/OrderDetails';
 import OrderDetailsEnhanced from '../pages/OrderDetailsEnhanced';
 import { useLocation } from 'react-router-dom';
@@ -96,6 +97,7 @@ export default function AppRouter() {
                     {/* Dashboard and main pages */}
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route path="overview" element={<Overview />} />
+                    <Route path="create-order" element={<CreateOrder />} />
                     <Route path="/order/:id" element={<OrderDetails />} />
                     <Route path="/order-enhanced/:id" element={<OrderDetailsEnhanced />} />
 
