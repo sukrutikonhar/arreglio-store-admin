@@ -2,15 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
 import { FileUpload } from 'primereact/fileupload';
 import { TieredMenu } from 'primereact/tieredmenu';
 import type { TieredMenu as TieredMenuType } from 'primereact/tieredmenu';
 import { DatePicker } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { Toast } from 'primereact/toast';
+import { useTeamContext } from '../context/TeamContext';
 import {
-    ChevronLeft, ChevronRight, MessageCircle, Paperclip, Clock, AlertCircle, CheckCircle2, PauseCircle, Bolt, XCircle, Filter, Plus,
-    MoreVertical
+    ChevronLeft, ChevronRight, MessageCircle, Paperclip, Clock, AlertCircle, Bolt, XCircle, Filter, Plus,
+    MoreVertical, User, Tag, Calendar, FileText
 } from 'lucide-react';
 
 const statuses = [
@@ -22,62 +25,92 @@ const statuses = [
     { key: 'pickup_by_customer', label: 'Pickup by Customer', color: 'bg-[#58D68D]', topBarColor: '#58D68D', border: 'border-[#D1D1D1]' },
 ];
 
-const mockUsers = [
-    { name: 'Jane Doe', avatar: '/images/avatar/user1.jpg' },
-    { name: 'John Smith', avatar: '/images/avatar/user1.jpg' },
-    { name: 'Alice Johnson', avatar: '/images/avatar/user1.jpg' },
-    { name: 'Bob Wilson', avatar: '/images/avatar/user1.jpg' },
+const priorities = [
+    { key: 'low', label: 'Low', color: 'text-blue-500', icon: <AlertCircle className="w-4 h-4 text-blue-500" /> },
+    { key: 'normal', label: 'Normal', color: 'text-green-500', icon: <AlertCircle className="w-4 h-4 text-green-500" /> },
+    { key: 'high', label: 'High', color: 'text-orange-500', icon: <AlertCircle className="w-4 h-4 text-orange-500" /> },
+    { key: 'urgent', label: 'Urgent', color: 'text-red-500', icon: <Bolt className="w-4 h-4 text-red-500" /> },
 ];
 
+
+
 const mockOrders = [
-    { id: 17, status: 'work_in_progress', priority: 'high', assigned: true, assignedUser: { name: 'Jane Doe', avatar: '/images/avatar/user1.jpg' }, comments: 1, attachments: 2, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 18, status: 'received', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: '/images/avatar/user1.jpg' }, comments: 1, attachments: 1, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 19, status: 'drop_by_customer', priority: 'urgent', assigned: true, assignedUser: { name: 'Jane Doe', avatar: '/images/avatar/user1.jpg' }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 20, status: 'waiting_customer_reply', priority: 'on_hold', assigned: true, assignedUser: { name: 'Jane Doe', avatar: '/images/avatar/user1.jpg' }, comments: 1, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 21, status: 'waiting_for_parts', priority: 'closed', assigned: true, assignedUser: { name: 'Jane Doe', avatar: '/images/avatar/user1.jpg' }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 22, status: 'pickup_by_customer', priority: 'completed', assigned: true, assignedUser: { name: 'Jane Doe', avatar: '/images/avatar/user1.jpg' }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
-    { id: 23, status: 'drop_by_customer', priority: 'normal', assigned: true, assignedUser: { name: 'John Smith', avatar: '/images/avatar/user1.jpg' }, comments: 2, attachments: 1, description: 'Urgent repair needed for customer equipment', date: 'Tomorrow 2:00 PM' },
-    { id: 24, status: 'received', priority: 'high', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: '/images/avatar/user1.jpg' }, comments: 3, attachments: 0, description: 'Regular maintenance check for office equipment', date: 'Friday 10:00 AM' },
-    { id: 25, status: 'work_in_progress', priority: 'urgent', assigned: true, assignedUser: { name: 'Bob Wilson', avatar: '/images/avatar/user1.jpg' }, comments: 1, attachments: 2, description: 'System upgrade and configuration for new client', date: 'Today 4:00 PM' },
-    { id: 26, status: 'waiting_customer_reply', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: '/images/avatar/user1.jpg' }, comments: 0, attachments: 1, description: 'Waiting for customer approval on proposed solution', date: 'Next Monday 9:00 AM' },
-    { id: 27, status: 'waiting_for_parts', priority: 'high', assigned: true, assignedUser: { name: 'John Smith', avatar: '/images/avatar/user1.jpg' }, comments: 2, attachments: 0, description: 'Parts ordered, waiting for delivery from supplier', date: 'Wednesday 3:00 PM' },
-    { id: 28, status: 'pickup_by_customer', priority: 'completed', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: '/images/avatar/user1.jpg' }, comments: 1, attachments: 0, description: 'Completed repair, ready for customer pickup', date: 'Yesterday 5:00 PM' },
+    { id: 17, status: 'work_in_progress', priority: 'high', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 1, attachments: 2, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 18, status: 'received', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 1, attachments: 1, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 19, status: 'drop_by_customer', priority: 'urgent', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 20, status: 'waiting_customer_reply', priority: 'on_hold', assigned: true, assignedUser: { name: 'Bob Wilson', avatar: null }, comments: 1, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 21, status: 'waiting_for_parts', priority: 'closed', assigned: true, assignedUser: { name: 'John Smith', avatar: null }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 22, status: 'pickup_by_customer', priority: 'completed', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 0, attachments: 0, description: 'Delivery Instructions (Lorem ipsum is simply dummy text used for placeholder when real text is not )', date: 'Pickup date & Time' },
+    { id: 23, status: 'drop_by_customer', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 2, attachments: 1, description: 'Urgent repair needed for customer equipment', date: 'Tomorrow 2:00 PM' },
+    { id: 24, status: 'received', priority: 'high', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 0, attachments: 0, description: 'Regular maintenance check for office equipment', date: 'Friday 10:00 AM' },
+    { id: 25, status: 'work_in_progress', priority: 'urgent', assigned: true, assignedUser: { name: 'Bob Wilson', avatar: null }, comments: 1, attachments: 2, description: 'System upgrade and configuration for new client', date: 'Today 4:00 PM' },
+    { id: 26, status: 'waiting_customer_reply', priority: 'normal', assigned: true, assignedUser: { name: 'Jane Doe', avatar: null }, comments: 0, attachments: 1, description: 'Waiting for customer approval on proposed solution', date: 'Next Monday 9:00 AM' },
+    { id: 27, status: 'waiting_for_parts', priority: 'high', assigned: true, assignedUser: { name: 'John Smith', avatar: null }, comments: 2, attachments: 0, description: 'Parts ordered, waiting for delivery from supplier', date: 'Wednesday 3:00 PM' },
+    { id: 28, status: 'pickup_by_customer', priority: 'completed', assigned: true, assignedUser: { name: 'Alice Johnson', avatar: null }, comments: 1, attachments: 0, description: 'Completed repair, ready for customer pickup', date: 'Yesterday 5:00 PM' },
 ];
 
 const priorityIcon = (priority: string) => {
-    switch (priority) {
-        case 'high': return <AlertCircle className="w-4 h-4 text-red-500" />;
-        case 'urgent': return <Bolt className="w-4 h-4 text-orange-500" />;
-        case 'on_hold': return <PauseCircle className="w-4 h-4 text-yellow-500" />;
-        case 'closed': return <XCircle className="w-4 h-4 text-gray-500" />;
-        case 'completed': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-        default: return <AlertCircle className="w-4 h-4 text-blue-500" />;
-    }
+    const priorityData = priorities.find(p => p.key === priority);
+    return priorityData ? priorityData.icon : <AlertCircle className="w-4 h-4 text-blue-500" />;
 };
 
 interface NewOrder {
-    title: string;
     description: string;
     assignedTo: any;
     pickupDate: any;
     status: string;
+    priority: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    estimatedCost: string;
+    tags: string[];
+    files: File[];
+}
+
+interface Order {
+    id: number;
+    status: string;
+    priority: string;
+    assigned: boolean;
+    assignedUser: { name: string; avatar: string | null };
+    comments: number;
+    attachments: number;
+    description: string;
+    date: string;
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    estimatedCost?: string;
+    tags?: string[];
 }
 
 export default function Overview() {
+    const { teamMembers } = useTeamContext();
     const [collapsed, setCollapsed] = useState(statuses.map(() => false));
-    const [orders, setOrders] = useState(mockOrders);
+    const [orders, setOrders] = useState<Order[]>(mockOrders);
     const [createOrderModal, setCreateOrderModal] = useState(false);
     const [newOrder, setNewOrder] = useState<NewOrder>({
-        title: '',
         description: '',
         assignedTo: null,
         pickupDate: null,
-        status: 'drop_by_customer'
+        status: 'drop_by_customer',
+        priority: 'normal',
+        customerName: '',
+        customerEmail: '',
+        customerPhone: '',
+        estimatedCost: '',
+        tags: [],
+        files: []
     });
     const [draggedOrder, setDraggedOrder] = useState<number | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [tagInput, setTagInput] = useState('');
     const navigate = useNavigate();
     const menuRef = useRef<TieredMenuType | null>(null);
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+    const toast = useRef<Toast>(null);
 
     // Menu items for the options menu
     const orderMenuItems = [
@@ -93,8 +126,7 @@ export default function Overview() {
         },
         {
             label: 'Move to Column',
-            icon: 'pi pi-arrow-right', // or use ArrowRight from lucide-react
-            // 📢 THIS creates the true submenu panel to the right
+            icon: 'pi pi-arrow-right',
             items: [
                 {
                     label: 'Drop by customer',
@@ -130,6 +162,62 @@ export default function Overview() {
         }
     ];
 
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {};
+
+        if (!newOrder.description.trim()) {
+            newErrors.description = 'Description is required';
+        }
+        if (!newOrder.assignedTo) {
+            newErrors.assignedTo = 'Please assign the order to someone';
+        }
+        if (!newOrder.customerName.trim()) {
+            newErrors.customerName = 'Customer name is required';
+        }
+        if (!newOrder.customerEmail.trim()) {
+            newErrors.customerEmail = 'Customer email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newOrder.customerEmail)) {
+            newErrors.customerEmail = 'Customer email is required';
+        }
+        if (!newOrder.customerPhone.trim()) {
+            newErrors.customerPhone = 'Customer phone is required';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleAddTag = () => {
+        if (tagInput.trim() && !newOrder.tags.includes(tagInput.trim())) {
+            setNewOrder(prev => ({
+                ...prev,
+                tags: [...prev.tags, tagInput.trim()]
+            }));
+            setTagInput('');
+        }
+    };
+
+    const handleRemoveTag = (tagToRemove: string) => {
+        setNewOrder(prev => ({
+            ...prev,
+            tags: prev.tags.filter(tag => tag !== tagToRemove)
+        }));
+    };
+
+    const handleFileUpload = (event: any) => {
+        const files = Array.from(event.files) as File[];
+        setNewOrder(prev => ({
+            ...prev,
+            files: [...prev.files, ...files]
+        }));
+    };
+
+    const handleRemoveFile = (fileToRemove: File) => {
+        setNewOrder(prev => ({
+            ...prev,
+            files: prev.files.filter(file => file !== fileToRemove)
+        }));
+    };
 
     const handleOptionsClick = (e: React.MouseEvent, orderId: number) => {
         e.stopPropagation();
@@ -148,6 +236,12 @@ export default function Overview() {
                     ? { ...order, status: newStatus }
                     : order
             ));
+            toast.current?.show({
+                severity: 'success',
+                summary: 'Order Moved',
+                detail: `Order #${selectedOrderId} moved to ${statuses.find(s => s.key === newStatus)?.label}`,
+                life: 3000
+            });
         }
     };
 
@@ -169,33 +263,99 @@ export default function Overview() {
                     ? { ...order, status: targetStatus }
                     : order
             ));
+            toast.current?.show({
+                severity: 'success',
+                summary: 'Order Moved',
+                detail: `Order #${draggedOrder} moved to ${statuses.find(s => s.key === targetStatus)?.label}`,
+                life: 3000
+            });
             setDraggedOrder(null);
         }
     };
 
-    const handleCreateOrder = () => {
-        if (newOrder.title && newOrder.description && newOrder.assignedTo) {
-            const newOrderData = {
+    const handleCreateOrder = async () => {
+        if (!validateForm()) {
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const newOrderData: Order = {
                 id: Math.max(...orders.map(o => o.id)) + 1,
                 status: newOrder.status,
-                priority: 'normal',
+                priority: newOrder.priority,
                 assigned: true,
                 assignedUser: newOrder.assignedTo,
                 comments: 0,
-                attachments: 0,
+                attachments: newOrder.files.length,
                 description: newOrder.description,
-                date: newOrder.pickupDate ? newOrder.pickupDate.format('YYYY-MM-DD HH:mm') : 'TBD'
+                date: newOrder.pickupDate ? newOrder.pickupDate.format('YYYY-MM-DD HH:mm') : 'TBD',
+                customerName: newOrder.customerName,
+                customerEmail: newOrder.customerEmail,
+                customerPhone: newOrder.customerPhone,
+                estimatedCost: newOrder.estimatedCost,
+                tags: newOrder.tags
             };
-            setOrders(prev => [...prev, newOrderData]);
-            setCreateOrderModal(false);
+
+            setOrders(prev => [newOrderData, ...prev]);
+
+            // Reset form
             setNewOrder({
-                title: '',
                 description: '',
                 assignedTo: null,
                 pickupDate: null,
-                status: 'drop_by_customer'
+                status: 'drop_by_customer',
+                priority: 'normal',
+                customerName: '',
+                customerEmail: '',
+                customerPhone: '',
+                estimatedCost: '',
+                tags: [],
+                files: []
             });
+
+            setCreateOrderModal(false);
+            setErrors({});
+
+            toast.current?.show({
+                severity: 'success',
+                summary: 'Order Created',
+                detail: `Order #${newOrderData.id} has been created successfully!`,
+                life: 5000
+            });
+
+        } catch (error) {
+            toast.current?.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to create order. Please try again.',
+                life: 5000
+            });
+        } finally {
+            setIsSubmitting(false);
         }
+    };
+
+    const resetForm = () => {
+        setNewOrder({
+            description: '',
+            assignedTo: null,
+            pickupDate: null,
+            status: 'drop_by_customer',
+            priority: 'normal',
+            customerName: '',
+            customerEmail: '',
+            customerPhone: '',
+            estimatedCost: '',
+            tags: [],
+            files: []
+        });
+        setErrors({});
+        setTagInput('');
     };
 
     useEffect(() => {
@@ -217,6 +377,8 @@ export default function Overview() {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 p-6">
+            <Toast ref={toast} />
+
             {/* Header Section */}
             <div className="flex justify-end items-center mb-6">
                 {/* Filters */}
@@ -322,16 +484,55 @@ export default function Overview() {
                                                         </span>
                                                     </div>
 
+
+
+                                                    {/* Customer info if exists */}
+                                                    {order.customerName && (
+                                                        <div className="flex items-center gap-2 mb-2 text-xs text-gray-600">
+                                                            <User className="w-3 h-3" />
+                                                            {order.customerName}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Tags if exist */}
+                                                    {order.tags && order.tags.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1 mb-2">
+                                                            {order.tags.slice(0, 3).map((tag, index) => (
+                                                                <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                                                    <Tag className="w-3 h-3 mr-1" />
+                                                                    {tag}
+                                                                </span>
+                                                            ))}
+                                                            {order.tags.length > 3 && (
+                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
+                                                                    +{order.tags.length - 3}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+
                                                     {/* Assignee + Comments/Attachments Row */}
                                                     <div className="flex justify-between items-center mb-3">
                                                         {/* Left: Assignee */}
                                                         <div className="flex items-center gap-2">
-                                                            <img
-                                                                src={order.assignedUser.avatar}
-                                                                alt={order.assignedUser.name}
-                                                                className="w-6 h-6 rounded-full border border-gray-200"
-                                                            />
-                                                            <span className="text-xs text-[#5F5C5C]">Order assigned to</span>
+                                                            {order.assignedUser.avatar ? (
+                                                                <img
+                                                                    src={order.assignedUser.avatar}
+                                                                    alt={order.assignedUser.name}
+                                                                    className="w-6 h-6 rounded-full border border-gray-200 object-cover"
+                                                                    onError={(e) => {
+                                                                        const target = e.target as HTMLImageElement;
+                                                                        target.style.display = 'none';
+                                                                        target.nextElementSibling?.classList.remove('hidden');
+                                                                    }}
+                                                                />
+                                                            ) : null}
+                                                            {!order.assignedUser.avatar && (
+                                                                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+                                                                    {order.assignedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                                                </div>
+                                                            )}
+                                                            <span className="text-xs text-[#5F5C5C] font-medium">{order.assignedUser.name}</span>
                                                         </div>
 
                                                         {/* Right: Comments and Attachments */}
@@ -355,6 +556,14 @@ export default function Overview() {
                                                         <Clock className="w-4 h-4" />
                                                         {order.date}
                                                     </div>
+
+                                                    {/* Estimated cost if exists */}
+                                                    {order.estimatedCost && (
+                                                        <div className="flex items-center gap-2 text-sm text-green-600 font-medium mt-2">
+                                                            <Tag className="w-4 h-4" />
+                                                            ${order.estimatedCost}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -366,84 +575,265 @@ export default function Overview() {
                 })}
             </div>
 
-
-
             {/* Create Order Modal */}
             <Dialog
                 visible={createOrderModal}
-                onHide={() => setCreateOrderModal(false)}
+                onHide={() => {
+                    setCreateOrderModal(false);
+                    resetForm();
+                }}
                 header="Create New Order"
-                style={{ width: '500px' }}
+                style={{ width: '700px' }}
                 footer={
                     <div className="flex justify-end gap-2">
-                        <Button label="Cancel" className="p-button-text" onClick={() => setCreateOrderModal(false)} />
-                        <Button label="Create Order" className="p-button-success" onClick={handleCreateOrder} />
+                        <Button
+                            label="Cancel"
+                            className="p-button-text"
+                            onClick={() => {
+                                setCreateOrderModal(false);
+                                resetForm();
+                            }}
+                        />
+                        <Button
+                            label={isSubmitting ? "Creating..." : "Create Order"}
+                            className="p-button-success"
+                            onClick={handleCreateOrder}
+                            disabled={isSubmitting}
+                            loading={isSubmitting}
+                        />
                     </div>
                 }
             >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Order Title</label>
-                        <InputText
-                            value={newOrder.title}
-                            onChange={(e) => setNewOrder(prev => ({ ...prev, title: e.target.value }))}
-                            placeholder="Enter order title"
-                            className="w-full"
-                        />
+                <div className="space-y-4 overflow-y-auto">
+                    {/* Basic Information */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Priority <span className="text-red-500">*</span>
+                            </label>
+                            <Dropdown
+                                value={newOrder.priority}
+                                onChange={(e) => setNewOrder(prev => ({ ...prev, priority: e.value }))}
+                                options={priorities}
+                                optionLabel="label"
+                                optionValue="key"
+                                placeholder="Select priority"
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Order Number
+                            </label>
+                            <InputText
+                                value={`#${Math.max(...orders.map(o => o.id)) + 1}`}
+                                className="w-full bg-gray-50"
+                                disabled
+                            />
+                        </div>
                     </div>
+
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <InputText
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Description <span className="text-red-500">*</span>
+                        </label>
+                        <InputTextarea
                             value={newOrder.description}
                             onChange={(e) => setNewOrder(prev => ({ ...prev, description: e.target.value }))}
                             placeholder="Enter order description"
-                            className="w-full"
+                            rows={3}
+                            className={`w-full ${errors.description ? 'p-invalid' : ''}`}
                         />
+                        {errors.description && <small className="p-error">{errors.description}</small>}
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Assign To</label>
-                        <Dropdown
-                            value={newOrder.assignedTo}
-                            onChange={(e) => setNewOrder(prev => ({ ...prev, assignedTo: e.value }))}
-                            options={mockUsers}
-                            optionLabel="name"
-                            placeholder="Select assignee"
-                            className="w-full"
-                        />
+
+                    {/* Customer Information */}
+                    <div className="border-t pt-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
+                            <User className="w-5 h-5" />
+                            Customer Information
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Customer Name <span className="text-red-500">*</span>
+                                </label>
+                                <InputText
+                                    value={newOrder.customerName}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, customerName: e.target.value }))}
+                                    placeholder="Enter customer name"
+                                    className={`w-full ${errors.customerName ? 'p-invalid' : ''}`}
+                                />
+                                {errors.customerName && <small className="p-error">{errors.customerName}</small>}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Customer Email <span className="text-red-500">*</span>
+                                </label>
+                                <InputText
+                                    value={newOrder.customerEmail}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, customerEmail: e.target.value }))}
+                                    placeholder="Enter customer email"
+                                    className={`w-full ${errors.customerEmail ? 'p-invalid' : ''}`}
+                                />
+                                {errors.customerEmail && <small className="p-error">{errors.customerEmail}</small>}
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Customer Phone <span className="text-red-500">*</span>
+                                </label>
+                                <InputText
+                                    value={newOrder.customerPhone}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, customerPhone: e.target.value }))}
+                                    placeholder="Enter customer phone"
+                                    className={`w-full ${errors.customerPhone ? 'p-invalid' : ''}`}
+                                />
+                                {errors.customerPhone && <small className="p-error">{errors.customerPhone}</small>}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Estimated Cost
+                                </label>
+                                <InputText
+                                    value={newOrder.estimatedCost}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, estimatedCost: e.target.value }))}
+                                    placeholder="Enter estimated cost"
+                                    className="w-full"
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Date & Time</label>
-                        <DatePicker
-                            showTime
-                            format="YYYY-MM-DD HH:mm"
-                            value={newOrder.pickupDate}
-                            onChange={(date) => setNewOrder(prev => ({ ...prev, pickupDate: date }))}
-                            className="w-full"
-                            placeholder="Select date and time"
-                            getPopupContainer={(triggerNode) => triggerNode.parentElement || document.body} />
+
+                    {/* Assignment and Scheduling */}
+                    <div className="border-t pt-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
+                            <Calendar className="w-5 h-5" />
+                            Assignment & Scheduling
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Assign To <span className="text-red-500">*</span>
+                                </label>
+                                <Dropdown
+                                    value={newOrder.assignedTo}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, assignedTo: e.value }))}
+                                    options={teamMembers}
+                                    optionLabel="name"
+                                    placeholder="Select assignee"
+                                    className={`w-full ${errors.assignedTo ? 'p-invalid' : ''}`}
+                                />
+                                {errors.assignedTo && <small className="p-error">{errors.assignedTo}</small>}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Pickup Date & Time
+                                </label>
+                                <DatePicker
+                                    showTime
+                                    format="YYYY-MM-DD HH:mm"
+                                    value={newOrder.pickupDate}
+                                    onChange={(date) => setNewOrder(prev => ({ ...prev, pickupDate: date }))}
+                                    className="w-full"
+                                    placeholder="Select date and time"
+                                    getPopupContainer={(triggerNode) => triggerNode.parentElement || document.body}
+                                />
+                            </div>
+                        </div>
+                        <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Status
+                            </label>
+                            <Dropdown
+                                value={newOrder.status}
+                                onChange={(e) => setNewOrder(prev => ({ ...prev, status: e.value }))}
+                                options={statuses}
+                                optionLabel="label"
+                                optionValue="key"
+                                placeholder="Select status"
+                                className="w-full"
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <Dropdown
-                            value={newOrder.status}
-                            onChange={(e) => setNewOrder(prev => ({ ...prev, status: e.value }))}
-                            options={statuses}
-                            optionLabel="label"
-                            optionValue="key"
-                            placeholder="Select status"
-                            className="w-full"
-                        />
+
+                    {/* Tags */}
+                    <div className="border-t pt-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
+                            <Tag className="w-5 h-5" />
+                            Tags
+                        </h3>
+                        <div className="flex gap-2 mb-3">
+                            <InputText
+                                value={tagInput}
+                                onChange={(e) => setTagInput(e.target.value)}
+                                placeholder="Add a tag"
+                                className="flex-1"
+                                onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
+                            />
+                            <Button
+                                label="Add"
+                                className="p-button-outlined"
+                                onClick={handleAddTag}
+                                disabled={!tagInput.trim()}
+                            />
+                        </div>
+                        {newOrder.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {newOrder.tags.map((tag, index) => (
+                                    <span
+                                        key={index}
+                                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+                                    >
+                                        {tag}
+                                        <button
+                                            onClick={() => handleRemoveTag(tag)}
+                                            className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
+                                        >
+                                            <XCircle className="w-4 h-4" />
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Upload File (Optional)</label>
+
+                    {/* File Uploads */}
+                    <div className="border-t pt-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
+                            <FileText className="w-5 h-5" />
+                            Attachments
+                        </h3>
                         <FileUpload
                             mode="basic"
-                            name="file"
+                            name="files"
                             accept="*"
-                            maxFileSize={1000000}
-                            chooseLabel="Choose File"
+                            maxFileSize={10000000}
+                            chooseLabel="Choose Files"
                             className="w-full"
+                            onSelect={handleFileUpload}
+                            multiple
                         />
+                        {newOrder.files.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                                {newOrder.files.map((file, index) => (
+                                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                        <div className="flex items-center gap-2">
+                                            <Paperclip className="w-4 h-4 text-gray-500" />
+                                            <span className="text-sm text-gray-700">{file.name}</span>
+                                            <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleRemoveFile(file)}
+                                            className="text-red-500 hover:text-red-700"
+                                        >
+                                            <XCircle className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </Dialog>

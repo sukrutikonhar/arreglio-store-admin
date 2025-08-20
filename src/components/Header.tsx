@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { Menu, Search, Home, BarChart2, Wrench, ShoppingBag, X, User, LogOut, Settings } from "lucide-react";
+import { Menu, Search, Home, BarChart2, X, User, LogOut, Settings } from "lucide-react";
 import { Cog8ToothIcon } from "@heroicons/react/24/solid";
 import { Button } from "primereact/button";
 
