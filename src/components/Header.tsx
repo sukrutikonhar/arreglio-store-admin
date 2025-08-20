@@ -238,7 +238,7 @@ export default function Header() {
                                     Overview
                                 </NavLink>
                             </li>
-                            <li>
+                            {/* <li>
                                 <NavLink
                                     to="/service-team"
                                     className={({ isActive }) =>
@@ -259,7 +259,7 @@ export default function Header() {
                                 >
                                     Customers
                                 </NavLink>
-                            </li>
+                            </li> */}
                         </ul>
                     </nav>
                 )}
@@ -304,7 +304,7 @@ export default function Header() {
                                         <span>Overview</span>
                                     </NavLink>
                                 </li>
-                                <li>
+                                {/* <li>
                                     <NavLink
                                         to="/service-team"
                                         className={({ isActive }) =>
@@ -327,7 +327,7 @@ export default function Header() {
                                         <ShoppingBag size={20} />
                                         <span>Customers</span>
                                     </NavLink>
-                                </li>
+                                </li> */}
                             </ul>
                         </nav>
                     </div>
