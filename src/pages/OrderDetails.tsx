@@ -195,6 +195,7 @@ export default function OrderDetails() {
         customerType: 'Regular',
         isEditing: false
     });
+    const [memberSearchTerm, setMemberSearchTerm] = useState('');
     const [additionalOrder, setAdditionalOrder] = useState({
         title: '',
         price: '',
@@ -523,6 +524,19 @@ export default function OrderDetails() {
     const handleAssignMember = (memberId: string) => {
         assignOrderToMember(order.id, memberId);
         setAssignOpen(false);
+        setMemberSearchTerm(''); // Clear search when closing
+
+        // Show success message
+        messagesRef.current?.show([
+            {
+                sticky: true,
+                life: 3000,
+                severity: 'success',
+                summary: 'Success',
+                detail: `Order assigned to ${teamMembers.find(m => m.id === memberId)?.name}`,
+                closable: true
+            }
+        ]);
     };
 
     // Handle unassigning member
@@ -1342,9 +1356,12 @@ export default function OrderDetails() {
 
                     {/* Assign User Modal */}
                     <Dialog
-                        header="Members"
+                        header="Assign Team Member"
                         visible={assignOpen}
-                        onHide={() => setAssignOpen(false)}
+                        onHide={() => {
+                            setAssignOpen(false);
+                            setMemberSearchTerm(''); // Clear search when closing
+                        }}
                         style={{ width: '500px' }}
                         modal
                         dismissableMask
@@ -1355,14 +1372,45 @@ export default function OrderDetails() {
                         <div className="space-y-4 pt-4">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <InputText placeholder="Search members" className="w-full pl-10" />
+                                <InputText
+                                    placeholder="Search members by name, role, or department"
+                                    className="w-full pl-10 pr-10"
+                                    value={memberSearchTerm}
+                                    onChange={(e) => setMemberSearchTerm(e.target.value)}
+                                />
+                                {memberSearchTerm && (
+                                    <button
+                                        onClick={() => setMemberSearchTerm('')}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                    >
+                                        <XCircle className="w-4 h-4 text-gray-400" />
+                                    </button>
+                                )}
                             </div>
 
                             <div>
-                                <div className="font-medium text-sm mb-2">Board members</div>
+                                <div className="font-medium text-sm mb-2">
+                                    Team Members ({teamMembers.filter(member =>
+                                        member.status === 'active' &&
+                                        member.name.toLowerCase().includes(memberSearchTerm.toLowerCase())
+                                    ).length} available)
+                                </div>
+
+                                {teamMembers.filter(member => member.status === 'active').length === 0 && (
+                                    <div className="text-center py-8 text-gray-500">
+                                        <User className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                                        <div className="text-sm font-medium">No active team members</div>
+                                        <div className="text-xs">Add team members in the Service Team page</div>
+                                    </div>
+                                )}
                                 <div className="space-y-2">
                                     {teamMembers
                                         .filter(member => member.status === 'active')
+                                        .filter(member =>
+                                            member.name.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+                                            member.role.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+                                            member.department.toLowerCase().includes(memberSearchTerm.toLowerCase())
+                                        )
                                         .map((member) => (
                                             <div
                                                 key={member.id}
@@ -1379,18 +1427,37 @@ export default function OrderDetails() {
                                                 )}
                                                 <div className="flex-1">
                                                     <div className="text-sm font-medium">{member.name}</div>
-                                                    <div className="text-xs text-gray-500">{member.role}</div>
+                                                    <div className="text-xs text-gray-500 capitalize">
+                                                        {member.role} • {member.department}
+                                                    </div>
                                                     {member.assignedOrders.length > 0 && (
                                                         <div className="text-xs text-blue-600">
                                                             {member.assignedOrders.length} order(s) assigned
                                                         </div>
                                                     )}
+                                                    <div className="text-xs text-gray-400">
+                                                        Last active: {member.lastActive}
+                                                    </div>
                                                 </div>
                                                 {currentAssignedMember?.id === member.id && (
                                                     <CheckCircle className="w-4 h-4 text-green-500" />
                                                 )}
                                             </div>
                                         ))}
+
+                                    {teamMembers
+                                        .filter(member => member.status === 'active')
+                                        .filter(member =>
+                                            member.name.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+                                            member.role.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+                                            member.department.toLowerCase().includes(memberSearchTerm.toLowerCase())
+                                        ).length === 0 && (
+                                            <div className="text-center py-8 text-gray-500">
+                                                <User className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                                                <div className="text-sm font-medium">No team members found</div>
+                                                <div className="text-xs">Try adjusting your search terms</div>
+                                            </div>
+                                        )}
                                 </div>
                             </div>
                         </div>
@@ -1825,12 +1892,11 @@ export default function OrderDetails() {
                                             }`}
                                         onClick={() => handleLabelSelect(label)}
                                     >
-                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${label.bgColor}`}>
-                                            <label.icon className={`w-3 h-3 ${label.textColor}`} />
-                                        </div>
+                                        <label.icon className={`w-5 h-5 ${label.textColor}`} />
                                         <span className={`text-sm ${label.textColor}`}>{label.name}</span>
                                     </div>
                                 ))}
+
                             </div>
 
                             <div className="border-t border-gray-200 pt-4">

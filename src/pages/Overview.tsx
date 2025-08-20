@@ -4,16 +4,17 @@ import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
-import { FileUpload } from 'primereact/fileupload';
+
 import { TieredMenu } from 'primereact/tieredmenu';
 import type { TieredMenu as TieredMenuType } from 'primereact/tieredmenu';
 import { DatePicker } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { Toast } from 'primereact/toast';
 import { useTeamContext } from '../context/TeamContext';
+import { useServiceContext } from '../context/ServiceContext';
 import {
-    ChevronLeft, ChevronRight, MessageCircle, Paperclip, Clock, AlertCircle, Bolt, XCircle, Filter, Plus,
-    MoreVertical, User, Calendar, FileText
+    ChevronLeft, ChevronRight, MessageCircle, Clock, AlertCircle, Bolt, Filter, Plus,
+    MoreVertical, User, Calendar, Tag
 } from 'lucide-react';
 
 const statuses = [
@@ -55,16 +56,23 @@ const priorityIcon = (priority: string) => {
 };
 
 interface NewOrder {
+    customerType: 'individual' | 'organization';
+    firstName: string;
+    lastName: string;
+    organizationName: string;
+    email: string;
+    phone: string;
+    address: string;
     description: string;
     assignedTo: any;
     pickupDate: any;
     status: string;
     priority: string;
-    customerName: string;
-    customerEmail: string;
-    customerPhone: string;
+    selectedServices: any[];
     estimatedCost: string;
-    files: File[];
+    // Vehicle information
+    vehicleBrand: string;
+    vehicleColor: string;
 }
 
 interface Order {
@@ -86,24 +94,35 @@ interface Order {
 
 export default function Overview() {
     const { teamMembers } = useTeamContext();
+    const { services } = useServiceContext();
     const [collapsed, setCollapsed] = useState(statuses.map(() => false));
     const [orders, setOrders] = useState<Order[]>(mockOrders);
     const [createOrderModal, setCreateOrderModal] = useState(false);
     const [newOrder, setNewOrder] = useState<NewOrder>({
+        customerType: 'individual',
+        firstName: '',
+        lastName: '',
+        organizationName: '',
+        email: '',
+        phone: '',
+        address: '',
         description: '',
         assignedTo: null,
         pickupDate: null,
         status: 'drop_by_customer',
         priority: 'normal',
-        customerName: '',
-        customerEmail: '',
-        customerPhone: '',
+        selectedServices: [],
         estimatedCost: '',
-        files: []
+        vehicleBrand: '',
+        vehicleColor: ''
     });
     const [draggedOrder, setDraggedOrder] = useState<number | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Service selection state
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [showServices, setShowServices] = useState<boolean>(false);
 
     // Check for new orders from CreateOrder page
     useEffect(() => {
@@ -194,17 +213,30 @@ export default function Overview() {
         if (!newOrder.assignedTo) {
             newErrors.assignedTo = 'Please assign the order to someone';
         }
-        if (!newOrder.customerName.trim()) {
-            newErrors.customerName = 'Customer name is required';
+
+        if (newOrder.customerType === 'individual') {
+            if (!newOrder.firstName.trim()) {
+                newErrors.firstName = 'First name is required';
+            }
+            if (!newOrder.lastName.trim()) {
+                newErrors.lastName = 'Last name is required';
+            }
+        } else {
+            if (!newOrder.organizationName.trim()) {
+                newErrors.organizationName = 'Organization name is required';
+            }
         }
-        if (!newOrder.customerEmail.trim()) {
-            newErrors.customerEmail = 'Customer email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newOrder.customerEmail)) {
-            newErrors.customerEmail = 'Customer email is required';
+
+        if (!newOrder.email.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newOrder.email)) {
+            newErrors.email = 'Please enter a valid email';
         }
-        if (!newOrder.customerPhone.trim()) {
-            newErrors.customerPhone = 'Customer phone is required';
+        if (!newOrder.phone.trim()) {
+            newErrors.phone = 'Phone number is required';
         }
+
+
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -212,20 +244,7 @@ export default function Overview() {
 
 
 
-    const handleFileUpload = (event: any) => {
-        const files = Array.from(event.files) as File[];
-        setNewOrder(prev => ({
-            ...prev,
-            files: [...prev.files, ...files]
-        }));
-    };
 
-    const handleRemoveFile = (fileToRemove: File) => {
-        setNewOrder(prev => ({
-            ...prev,
-            files: prev.files.filter(file => file !== fileToRemove)
-        }));
-    };
 
     const handleOptionsClick = (e: React.MouseEvent, orderId: number) => {
         e.stopPropagation();
@@ -299,30 +318,37 @@ export default function Overview() {
                 assigned: true,
                 assignedUser: newOrder.assignedTo,
                 comments: 0,
-                attachments: newOrder.files.length,
+                attachments: 0,
                 description: newOrder.description,
                 date: newOrder.pickupDate ? newOrder.pickupDate.format('YYYY-MM-DD HH:mm') : 'TBD',
-                customerName: newOrder.customerName,
-                customerEmail: newOrder.customerEmail,
-                customerPhone: newOrder.customerPhone,
+                customerName: newOrder.customerType === 'individual'
+                    ? `${newOrder.firstName} ${newOrder.lastName}`
+                    : newOrder.organizationName,
+                customerEmail: newOrder.email,
+                customerPhone: newOrder.phone,
                 estimatedCost: newOrder.estimatedCost,
-
             };
 
             setOrders(prev => [newOrderData, ...prev]);
 
             // Reset form
             setNewOrder({
+                customerType: 'individual',
+                firstName: '',
+                lastName: '',
+                organizationName: '',
+                email: '',
+                phone: '',
+                address: '',
                 description: '',
                 assignedTo: null,
                 pickupDate: null,
                 status: 'drop_by_customer',
                 priority: 'normal',
-                customerName: '',
-                customerEmail: '',
-                customerPhone: '',
+                selectedServices: [],
                 estimatedCost: '',
-                files: []
+                vehicleBrand: '',
+                vehicleColor: ''
             });
 
             setCreateOrderModal(false);
@@ -349,20 +375,73 @@ export default function Overview() {
 
     const resetForm = () => {
         setNewOrder({
+            customerType: 'individual',
+            firstName: '',
+            lastName: '',
+            organizationName: '',
+            email: '',
+            phone: '',
+            address: '',
             description: '',
             assignedTo: null,
             pickupDate: null,
             status: 'drop_by_customer',
             priority: 'normal',
-            customerName: '',
-            customerEmail: '',
-            customerPhone: '',
+            selectedServices: [],
             estimatedCost: '',
-            files: []
+            vehicleBrand: '',
+            vehicleColor: ''
         });
         setErrors({});
-
+        setSelectedCategory(null);
+        setShowServices(false);
     };
+
+    // Service selection helper functions
+    const getCategories = () => {
+        const categories = [...new Set(services.map(service => service.category))];
+        return categories.map(category => ({
+            name: category,
+            serviceCount: services.filter(service => service.category === category).length
+        }));
+    };
+
+    const getServicesForCategory = (category: string) => {
+        return services.filter(service => service.category === category);
+    };
+
+    const handleCategorySelect = (category: string) => {
+        setSelectedCategory(category);
+        setShowServices(true);
+    };
+
+    const handleBackToCategories = () => {
+        setShowServices(false);
+        setSelectedCategory(null);
+    };
+
+    const handleServiceToggle = (service: any) => {
+        const isSelected = newOrder.selectedServices.some(s => s.id === service.id);
+        let updatedServices;
+
+        if (isSelected) {
+            updatedServices = newOrder.selectedServices.filter(s => s.id !== service.id);
+        } else {
+            updatedServices = [...newOrder.selectedServices, service];
+        }
+
+        const totalCost = updatedServices.reduce((total, s) => total + s.price, 0);
+
+        setNewOrder(prev => ({
+            ...prev,
+            selectedServices: updatedServices,
+            estimatedCost: totalCost.toString()
+        }));
+    };
+
+
+
+
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -399,7 +478,7 @@ export default function Overview() {
                     icon={<Plus className="w-4 h-4" />}
                     label="Create Order"
                     className="p-button-success bg-green-600 hover:bg-green-700"
-                    onClick={() => navigate('/create-order')}
+                    onClick={() => setCreateOrderModal(true)}
                 />
             </div>
 
@@ -532,7 +611,7 @@ export default function Overview() {
                                                                 <MessageCircle className="w-3 h-3" /> {order.comments}
                                                             </span>
                                                             <span className="flex items-center gap-1 text-[#707070] text-xs">
-                                                                <Paperclip className="w-3 h-3" /> {order.attachments}
+                                                                {order.attachments}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -574,7 +653,6 @@ export default function Overview() {
                     resetForm();
                 }}
                 header="Create New Order"
-                style={{ width: '700px' }}
                 footer={
                     <div className="flex justify-end gap-2">
                         <Button
@@ -595,9 +673,9 @@ export default function Overview() {
                     </div>
                 }
             >
-                <div className="space-y-4 overflow-y-auto">
+                <div className="space-y-6 overflow-y-auto">
                     {/* Basic Information */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Priority <span className="text-red-500">*</span>
@@ -644,58 +722,271 @@ export default function Overview() {
                             <User className="w-5 h-5" />
                             Customer Information
                         </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Customer Name <span className="text-red-500">*</span>
+
+                        {/* Customer Type Selection */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Customer Type <span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex gap-4">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="customerType"
+                                        value="individual"
+                                        checked={newOrder.customerType === 'individual'}
+                                        onChange={(e) => setNewOrder(prev => ({ ...prev, customerType: e.target.value as 'individual' | 'organization' }))}
+                                        className="text-primary"
+                                    />
+                                    <span className="text-sm">Individual</span>
                                 </label>
-                                <InputText
-                                    value={newOrder.customerName}
-                                    onChange={(e) => setNewOrder(prev => ({ ...prev, customerName: e.target.value }))}
-                                    placeholder="Enter customer name"
-                                    className={`w-full ${errors.customerName ? 'p-invalid' : ''}`}
-                                />
-                                {errors.customerName && <small className="p-error">{errors.customerName}</small>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Customer Email <span className="text-red-500">*</span>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="customerType"
+                                        value="organization"
+                                        checked={newOrder.customerType === 'organization'}
+                                        onChange={(e) => setNewOrder(prev => ({ ...prev, customerType: e.target.value as 'individual' | 'organization' }))}
+                                        className="text-primary"
+                                    />
+                                    <span className="text-sm">Organization</span>
                                 </label>
-                                <InputText
-                                    value={newOrder.customerEmail}
-                                    onChange={(e) => setNewOrder(prev => ({ ...prev, customerEmail: e.target.value }))}
-                                    placeholder="Enter customer email"
-                                    className={`w-full ${errors.customerEmail ? 'p-invalid' : ''}`}
-                                />
-                                {errors.customerEmail && <small className="p-error">{errors.customerEmail}</small>}
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
+
+                        {/* Dynamic Customer Fields */}
+                        {newOrder.customerType === 'individual' ? (
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        First Name <span className="text-red-500">*</span>
+                                    </label>
+                                    <InputText
+                                        value={newOrder.firstName}
+                                        onChange={(e) => setNewOrder(prev => ({ ...prev, firstName: e.target.value }))}
+                                        placeholder="Enter first name"
+                                        className={`w-full ${errors.firstName ? 'p-invalid' : ''}`}
+                                    />
+                                    {errors.firstName && <small className="p-error">{errors.firstName}</small>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Last Name <span className="text-red-500">*</span>
+                                    </label>
+                                    <InputText
+                                        value={newOrder.lastName}
+                                        onChange={(e) => setNewOrder(prev => ({ ...prev, lastName: e.target.value }))}
+                                        placeholder="Enter last name"
+                                        className={`w-full ${errors.lastName ? 'p-invalid' : ''}`}
+                                    />
+                                    {errors.lastName && <small className="p-error">{errors.lastName}</small>}
+                                </div>
+                            </div>
+                        ) : (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Customer Phone <span className="text-red-500">*</span>
+                                    Organization Name <span className="text-red-500">*</span>
                                 </label>
                                 <InputText
-                                    value={newOrder.customerPhone}
-                                    onChange={(e) => setNewOrder(prev => ({ ...prev, customerPhone: e.target.value }))}
-                                    placeholder="Enter customer phone"
-                                    className={`w-full ${errors.customerPhone ? 'p-invalid' : ''}`}
+                                    value={newOrder.organizationName}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, organizationName: e.target.value }))}
+                                    placeholder="Enter organization name"
+                                    className={`w-full ${errors.organizationName ? 'p-invalid' : ''}`}
                                 />
-                                {errors.customerPhone && <small className="p-error">{errors.customerPhone}</small>}
+                                {errors.organizationName && <small className="p-error">{errors.organizationName}</small>}
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-6 mt-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Email <span className="text-red-500">*</span>
+                                </label>
+                                <InputText
+                                    value={newOrder.email}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, email: e.target.value }))}
+                                    placeholder="Enter email"
+                                    className={`w-full ${errors.email ? 'p-invalid' : ''}`}
+                                />
+                                {errors.email && <small className="p-error">{errors.email}</small>}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-500 mb-1">
+                                    Phone <span className="text-red-500">*</span>
+                                </label>
+                                <InputText
+                                    value={newOrder.phone}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, phone: e.target.value }))}
+                                    placeholder="Enter phone number"
+                                    className={`w-full ${errors.phone ? 'p-invalid' : ''}`}
+                                />
+                                {errors.phone && <small className="p-error">{errors.phone}</small>}
+                            </div>
+                        </div>
+
+                        <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Address
+                            </label>
+                            <InputTextarea
+                                value={newOrder.address}
+                                onChange={(e) => setNewOrder(prev => ({ ...prev, address: e.target.value }))}
+                                placeholder="Enter address"
+                                rows={2}
+                                className="w-full"
+                            />
+                        </div>
+
+                        <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Estimated Cost (Auto-calculated)
+                            </label>
+                            <InputText
+                                value={newOrder.estimatedCost || '0'}
+                                className="w-full bg-gray-50"
+                                disabled
+                            />
+                        </div>
+                    </div>
+
+                    {/* Vehicle Information */}
+                    <div className="border-t pt-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
+                            <User className="w-5 h-5" />
+                            Vehicle Information
+                        </h3>
+                        <div className="grid grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Brand Name
+                                </label>
+                                <InputText
+                                    value={newOrder.vehicleBrand}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, vehicleBrand: e.target.value }))}
+                                    placeholder="Enter vehicle brand"
+                                    className="w-full"
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Estimated Cost
+                                    Color
                                 </label>
                                 <InputText
-                                    value={newOrder.estimatedCost}
-                                    onChange={(e) => setNewOrder(prev => ({ ...prev, estimatedCost: e.target.value }))}
-                                    placeholder="Enter estimated cost"
+                                    value={newOrder.vehicleColor}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, vehicleColor: e.target.value }))}
+                                    placeholder="Enter vehicle color"
                                     className="w-full"
                                 />
                             </div>
                         </div>
                     </div>
+
+                    {/* Services Selection */}
+                    <div className="border-t pt-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
+                            <Tag className="w-5 h-5" />
+                            Services Selection
+                        </h3>
+
+                        <div className="space-y-4">
+                            {!showServices ? (
+                                <>
+                                    <div className="text-sm text-gray-600 mb-4">
+                                        Select a service category to view available services
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {getCategories().map((category) => (
+                                            <div
+                                                key={category.name}
+                                                onClick={() => handleCategorySelect(category.name)}
+                                                className="p-4 border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <h4 className="font-medium text-gray-900">{category.name}</h4>
+                                                        <p className="text-sm text-gray-600">
+                                                            {category.serviceCount} service{category.serviceCount !== 1 ? 's' : ''} available
+                                                        </p>
+                                                    </div>
+                                                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Button
+                                            type="button"
+                                            onClick={handleBackToCategories}
+                                            className="p-button-text p-button-sm"
+                                            icon={<ChevronLeft className="w-4 h-4" />}
+                                            label="Back to Categories"
+                                        />
+                                    </div>
+
+                                    <div className="text-sm text-gray-600 mb-4">
+                                        Select services from <span className="font-medium">{selectedCategory}</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
+                                        {getServicesForCategory(selectedCategory || '').map((service) => {
+                                            const isSelected = newOrder.selectedServices.some(s => s.id === service.id);
+                                            return (
+                                                <div
+                                                    key={service.id}
+                                                    onClick={() => handleServiceToggle(service)}
+                                                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${isSelected
+                                                            ? 'border-primary bg-primary/10 ring-2 ring-primary/20'
+                                                            : 'border-gray-200 hover:border-primary hover:bg-primary/5'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex-1">
+                                                            <h4 className="font-medium text-gray-900">{service.serviceName}</h4>
+                                                            <p className="text-sm text-gray-600 mt-1">{service.serviceDescription}</p>
+                                                        </div>
+                                                        <div className="ml-4 text-right">
+                                                            <div className="text-lg font-semibold text-secondary">${service.price}</div>
+                                                            {isSelected && (
+                                                                <div className="text-xs text-primary font-medium mt-1">Selected</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Selected Services Summary */}
+                                    {newOrder.selectedServices.length > 0 && (
+                                        <div className="p-3 bg-secondary/5 rounded-lg mt-4">
+                                            <div className="font-medium text-gray-800 mb-2">Selected Services:</div>
+                                            <div className="space-y-1">
+                                                {newOrder.selectedServices.map((service) => (
+                                                    <div key={service.id} className="flex items-center justify-between text-sm">
+                                                        <span className="text-gray-700">{service.serviceName}</span>
+                                                        <span className="font-medium text-secondary">${service.price}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="border-t pt-2 mt-2">
+                                                <div className="flex items-center justify-between font-semibold">
+                                                    <span>Services Total:</span>
+                                                    <span className="text-secondary">
+                                                        ${newOrder.selectedServices.reduce((total, service) => total + service.price, 0)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+
 
                     {/* Assignment and Scheduling */}
                     <div className="border-t pt-4">
@@ -703,7 +994,7 @@ export default function Overview() {
                             <Calendar className="w-5 h-5" />
                             Assignment & Scheduling
                         </h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Assign To <span className="text-red-500">*</span>
@@ -751,42 +1042,7 @@ export default function Overview() {
 
 
 
-                    {/* File Uploads */}
-                    <div className="border-t pt-4">
-                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center gap-2">
-                            <FileText className="w-5 h-5" />
-                            Attachments
-                        </h3>
-                        <FileUpload
-                            mode="basic"
-                            name="files"
-                            accept="*"
-                            maxFileSize={10000000}
-                            chooseLabel="Choose Files"
-                            className="w-full"
-                            onSelect={handleFileUpload}
-                            multiple
-                        />
-                        {newOrder.files.length > 0 && (
-                            <div className="mt-3 space-y-2">
-                                {newOrder.files.map((file, index) => (
-                                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                        <div className="flex items-center gap-2">
-                                            <Paperclip className="w-4 h-4 text-gray-500" />
-                                            <span className="text-sm text-gray-700">{file.name}</span>
-                                            <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                                        </div>
-                                        <button
-                                            onClick={() => handleRemoveFile(file)}
-                                            className="text-red-500 hover:text-red-700"
-                                        >
-                                            <XCircle className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+
                 </div>
             </Dialog>
 
